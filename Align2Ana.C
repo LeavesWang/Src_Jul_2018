@@ -99,7 +99,7 @@ void Align2Ana()
 	double tPMT[8];
 	double tAdcDet[2], tTdcDet[2], egyDet[2];
 	
-	int iEntry;
+	long long iEntry;
 	int i, j, k, m, n, p, q, u;
 	int coin, coin1, coin2;
 	int goodSi, goodMCP[2];
@@ -136,7 +136,7 @@ void Align2Ana()
 		memset(&alignMqdcTof, 0, sizeof(alignMqdcTof));
 		memset(&alignMqdcMcp, 0, sizeof(alignMqdcMcp));
 		memset(&alignS800, 0, sizeof(alignS800));
-				
+
 		tAlign->SetBranchAddress("runNum", &runNum);
 		tAlign->SetBranchAddress("runSet", &runSet);
 		tAlign->SetBranchAddress("alignMadc", &alignMadc);
@@ -144,7 +144,7 @@ void Align2Ana()
 		tAlign->SetBranchAddress("alignMqdcTof", &alignMqdcTof);
 		tAlign->SetBranchAddress("alignMqdcMcp", &alignMqdcMcp);
 		tAlign->SetBranchAddress("alignS800", &alignS800);
-		
+
 		TFile *fAna=new TFile(sAna.c_str(), "RECREATE");
 		TTree *tAnaADC[2], *tAnaTDC[2];
 		tAnaADC[0]=new TTree("tAnaADC1", "tree for clk+TAC+ADC analysis");
@@ -154,6 +154,7 @@ void Align2Ana()
 		
 		tAnaADC[0]->Branch("setting", &setting);
 		tAnaADC[0]->Branch("anaADC1", &anaADC[0], "runNum/I:sig[2][2]/I:tof/D:amp/D:tD[8][8]/D:egy[8]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I");
+		
 		
 		tAnaADC[1]->Branch("setting", &setting);
 		tAnaADC[1]->Branch("anaADC2", &anaADC[1], "runNum/I:sig[2][2]/I:tof/D:amp/D:tD[8][8]/D:egy[8]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I");
@@ -233,8 +234,9 @@ void Align2Ana()
 					if(coin1==anaADC[0].sig[0][0]&&coin2==anaADC[0].sig[1][0])
 					{
 						anaADC[0].tof=tAdcDet[1]-tAdcDet[0];
-						cout<<anaADC[0].tof<<endl;
+						// cout<<anaADC[0].tof<<endl;
 						anaADC[0].tof=CALTOF[0]+CALTOF[1]*anaADC[0].tof;
+						// cout<<anaADC[0].tof<<endl;
 						anaADC[0].amp=egyDet[1]-egyDet[0];
 						
 						memset(goodMCP, 0, sizeof(goodMCP));
@@ -299,7 +301,7 @@ void Align2Ana()
 									}
 							}
 						}
-						if(b>0&&b<1&&alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4)
+						if(b>0&&b<1&&alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4&&runNum==271)
 						{
 							// cout<<"anaADC[0].Z: "<<anaADC[0].Z<<endl;
 							// cout<<"anaADC[0].brho[0]: "<<anaADC[0].brho[0]<<endl;
@@ -307,6 +309,7 @@ void Align2Ana()
 							anaADC[0].runNum=runNum;
 							setting=*runSet;
 							tAnaADC[0]->Fill();
+							cout<<anaADC[0].tof<<endl;
 						}
 					}
 				}				
@@ -408,7 +411,7 @@ void Align2Ana()
 									}
 							}
 						}
-						if(b>0&&b<1&&alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4)
+						if(b>0&&b<1&&alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4&&runNum==271)
 						{
 							anaADC[1].runNum=runNum;
 							setting=*runSet;
@@ -519,7 +522,7 @@ void Align2Ana()
 								anaTDC[i].beta=b;
 								anaTDC[i].gamma=1/sqrt(1-b*b);
 								if(alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1)
-								{
+								{	
 									anaTDC[i].Z=anaTDC[i].delE[0]/sqrt(1/b/b*log(5930.0/(1/b/b-1))-1);
 									anaTDC[i].Z=CALZ[0]+CALZ[1]*anaTDC[i].Z+CALZ[2]*pow(anaTDC[i].Z,2);
 									anaTDC[i].Zi=TMath::Nint(anaTDC[i].Z);
@@ -545,7 +548,7 @@ void Align2Ana()
 										}
 								}
 							}
-							if(b>0&&b<1&&alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4)
+							if(b>0&&b<1&&alignS800.pin[0]>100&&alignS800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4&&runNum==271)
 							{
 								anaTDC[i].runNum=runNum;
 								setting=*runSet;
