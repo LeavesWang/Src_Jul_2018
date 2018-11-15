@@ -233,6 +233,7 @@ void Align2Ana()
 					if(coin1==anaADC[0].sig[0][0]&&coin2==anaADC[0].sig[1][0])
 					{
 						anaADC[0].tof=tAdcDet[1]-tAdcDet[0];
+						cout<<anaADC[0].tof<<endl;
 						anaADC[0].tof=CALTOF[0]+CALTOF[1]*anaADC[0].tof;
 						anaADC[0].amp=egyDet[1]-egyDet[0];
 						
