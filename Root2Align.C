@@ -526,7 +526,7 @@ void Root2Align()
 									alignMstc[i].data[k]=alignMstc[i].data[k]+(aveModTot[i][j]-meanModRun[i][j]);
 							}
 						for(i=0; i<5; i++)
-							if(alignS800.pin[i]>RNGMOD[4][0]&&alignS800.pin[i]<RNGMOD[4][1])
+							if(s800.pin[i]>RNGMOD[4][0]&&s800.pin[i]<RNGMOD[4][1])
 								alignS800.pin[i]=alignS800.pin[i]+(aveModTot[4][i]-meanModRun[4][i]);
 						tAlign->Fill();
 					}
