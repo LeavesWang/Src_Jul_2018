@@ -137,7 +137,7 @@ void Align2Ana()
 		TTree *tAna=new TTree("tAna", "tree for data analysis");
 		
 		tAna->Branch("setting", &setting);
-		tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[8][8]/D:egy[8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I:run/I");
+		tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I:run/I");
 		
 		for(iEntry=0; iEntry<(tAlign->GetEntries()); iEntry++)
 		// for(iEntry=0; iEntry<10000; iEntry++)
