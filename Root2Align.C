@@ -272,7 +272,7 @@ void Root2Align()
 				
 				for(iSet=0; iSet<SETNUM; iSet++)
 				{
-					sfSet="/home/kailong/ExpData/Jul2018/AlignData/runNum"+sSet[iSet]+".dat";
+					sfSet="/home/kailong/ExpData/Jul2018/Src/runNum"+sSet[iSet]+".dat";
 					printf("\n**********Now selecting the data from %s to %s! [according to %s]\n\n", sBasAlign.c_str(), sAdvAlign.c_str(), sfSet.c_str());
 					fSet.open(sfSet.c_str());
 					fSet>>iRun;
@@ -455,7 +455,7 @@ void Root2Align()
 					
 					for(iSet=0; iSet<SETNUM; iSet++)
 					{
-						sfSet="/home/kailong/ExpData/Jul2018/AlignData/runNum"+sSet[iSet]+".dat";
+						sfSet="/home/kailong/ExpData/Jul2018/Src/runNum"+sSet[iSet]+".dat";
 						fSet.open(sfSet.c_str());
 						while(!fSet.eof())
 						{
@@ -588,7 +588,7 @@ void Root2Align()
 				
 				for(iSet=0; iSet<SETNUM; iSet++)
 				{
-					sfSet="/home/kailong/ExpData/Jul2018/AlignData/runNum"+sSet[iSet]+".dat";
+					sfSet="/home/kailong/ExpData/Jul2018/Src/runNum"+sSet[iSet]+".dat";
 					printf("\n**********Now generating the tree of tDrawGraph in %s! [according to %s]\n\n", sAlign.c_str(), sfSet.c_str());
 					fSet.open(sfSet.c_str());
 					fSet>>iRun;
