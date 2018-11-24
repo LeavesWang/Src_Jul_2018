@@ -78,7 +78,7 @@ void Root2Ana()
 	const int LQDCMCP[8]={726, 730, 745, 742, 700,700,700,700};
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
-	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4881}}; //Mev/ch  //0.6951 is the original slope and 0.4886 is related to the material in front of Si detectors.
+	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope and 0.4886 is related to the material in front of Si detectors.
 
 	const double CALXMCP[2][4]={{-4.11869, -26.6253, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
 	const double CALYMCP[2][4]={{0,1,0,0}, {0,1,0,0}};
