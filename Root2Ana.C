@@ -74,7 +74,7 @@ struct StrtAna
 
 void Root2Ana()
 {		
-	const int LADC=100, HADC=7680, LTDC=1, HTDC=65536, LQDCTOF=800, HQDC=3840;
+	const int LADC=100, HADC=7680, LTDC=1, HTDC=65536, LQDCTOF=800, HQDC=3840, LPIN=10, HPIN=4010;
 	const int LQDCMCP[8]={726, 730, 745, 742, 700,700,700,700};
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
@@ -335,13 +335,13 @@ void Root2Ana()
 						ana.tke[iAna]=0;
 						goodSi=0;
 						for(q=0; q<5; q++)
-							if(s800.pin[q]>100&&s800.pin[q]<4000)
+							if(s800.pin[q]>LPIN&&s800.pin[q]<HPIN)
 							{
 								ana.delE[iAna][q]=CALPIN[q][0]+CALPIN[q][1]*s800.pin[q];
 								ana.tke[iAna]+=ana.delE[iAna][q];
 								goodSi++;
 							}
-						if(s800.pin[0]>100&&s800.pin[0]<4000)
+						if(s800.pin[0]>LPIN&&s800.pin[0]<HPIN)
 							ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*s800.pin[iAna]); //consider the absorption effect of material in front of Si detectors
 							
 						b=LOF/ana.tof[iAna]/0.299792458;
@@ -349,7 +349,7 @@ void Root2Ana()
 						{
 							ana.beta[iAna]=b;
 							ana.gamma[iAna]=1/sqrt(1-b*b);
-							if(s800.pin[0]>100&&s800.pin[0]<4000&&goodSi>1)
+							if(s800.pin[0]>LPIN&&s800.pin[0]<HPIN&&goodSi>1)
 							{
 								ana.Z[iAna]=ana.delE[iAna][0]/sqrt(1/b/b*log(5930.0/(1/b/b-1))-1);
 								ana.Z[iAna]=CALZ[0]+CALZ[1]*ana.Z[iAna]+CALZ[2]*pow(ana.Z[iAna],2);
@@ -377,7 +377,8 @@ void Root2Ana()
 							}
 						}
 						
-						if(b>0&&b<1&&s800.pin[0]>100&&s800.pin[0]<4000&&goodSi>1&&goodMCP[0]==4)
+						// if(b>0&&b<1&&s800.pin[0]>LPIN&&s800.pin[0]<HPIN&&goodSi>1&&goodMCP[0]==4)
+						if(b>0&&b<1&&s800.pin[0]>LPIN&&s800.pin[0]<HPIN&&goodSi>1)
 							goodEvt++;
 					}
 				}
