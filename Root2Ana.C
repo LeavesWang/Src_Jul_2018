@@ -102,7 +102,8 @@ struct StrtPid
 
 void Root2Ana()
 {		
-	const int LADC=100, HADC=7680, LTDC=10000, HTDC=60000, LQDCTOF=800, HQDC=3840, LPIN=10, HPIN=4010;
+	const int LADC=100, HADC=7680, LTDC=10000, HTDC=60000, HQDC=3840, LPIN=10, HPIN=4010;
+	const int LQDCTOF[8]={800,800,800,800, 780,800,770,800};
 	const int LQDCMCP[8]={726, 730, 745, 742, 700,700,700,700};
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
@@ -234,7 +235,7 @@ void Root2Ana()
 						{
 							j=2*i+1;
 							k=i/4;
-							if(madc.data[i]>LADC&&madc.data[i]<HADC&&mqdcTOF.data[j]>LQDCTOF&&mqdcTOF.data[j]<HQDC)
+							if(madc.data[i]>LADC&&madc.data[i]<HADC&&mqdcTOF.data[j]>LQDCTOF[i]&&mqdcTOF.data[j]<HQDC)
 							{
 								ana.sig[0][k][0]++;
 								ana.sig[0][k][1]=10*ana.sig[0][k][1]+(i+1);
@@ -252,7 +253,7 @@ void Root2Ana()
 							k=2*(i-8)+9;
 							m=i-8;
 							p=i-4;
-							if(madc.data[i]>LADC&&madc.data[i]<HADC&&mqdcTOF.data[j]>LQDCTOF&&mqdcTOF.data[j]<HQDC&&mqdcTOF.data[k]>LQDCTOF&&mqdcTOF.data[k]<HQDC)
+							if(madc.data[i]>LADC&&madc.data[i]<HADC&&mqdcTOF.data[j]>LQDCTOF[i-8]&&mqdcTOF.data[j]<HQDC&&mqdcTOF.data[k]>LQDCTOF[i-4]&&mqdcTOF.data[k]<HQDC)
 							{
 								ana.sig[1][0][0]++;
 								ana.sig[1][1][0]++;
@@ -294,7 +295,7 @@ void Root2Ana()
 							m=2*j+1;
 							n=j/4;
 				
-							if(mtdc.data[k]>LTDC&&mtdc.data[k]<HTDC&&mqdcTOF.data[m]>LQDCTOF&&mqdcTOF.data[m]<HQDC)
+							if(mtdc.data[k]>LTDC&&mtdc.data[k]<HTDC&&mqdcTOF.data[m]>LQDCTOF[j]&&mqdcTOF.data[m]<HQDC)
 							{
 								ana.sig[iAna][n][0]++;
 								ana.sig[iAna][n][1]=10*ana.sig[iAna][n][1]+(j+1);
