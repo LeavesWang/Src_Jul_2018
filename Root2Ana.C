@@ -72,9 +72,37 @@ struct StrtAna
 	int run;
 };
 
+struct StrtPid
+{
+	double tof;
+	double xMCP[2]; //two gain settings
+	double yMCP[2]; //two gain settings
+	double delE[5];
+	double tke;	
+	double beta;
+	double gamma;
+	double Z;
+	double dZ;
+	double brho[2];
+	double AoQ[2];
+	double Q[2];
+	double ZmQ[2];
+	double ZImQ[2];
+	double A[2];
+	double Araw[2];
+	double Am2Q[2];
+	double Am3Q[2];
+	double Am2Z[2];
+	double Am3Z[2];
+	double dAm2Z[2];
+	double dAm3Z[2];
+	int Zi;
+	int run;
+};
+
 void Root2Ana()
 {		
-	const int LADC=100, HADC=7680, LTDC=1, HTDC=65536, LQDCTOF=800, HQDC=3840, LPIN=10, HPIN=4010;
+	const int LADC=100, HADC=7680, LTDC=10000, HTDC=60000, LQDCTOF=800, HQDC=3840, LPIN=10, HPIN=4010;
 	const int LQDCMCP[8]={726, 730, 745, 742, 700,700,700,700};
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
@@ -88,7 +116,7 @@ void Root2Ana()
 	const double DISP=112; // unit??
 	const double LOF=60.74; //m
 
-	const double CALZ[3]={0, 1, 0};
+	const double CALZ[2]={1.191, 5.9377};
 	
 	string sSet[2]={"PS_270_382", "RS_270_382"};
 	
@@ -96,15 +124,18 @@ void Root2Ana()
 	StrtMesytec madc, mtdc, mqdcTOF, mqdcMCP;
 	StrtS800 s800;
 	StrtAna ana;
+	StrtPid pid;
 
 	double tPMT[8];
 	double timeDet[2], egyDet[2];
+	double calQdcMcp[8];
 	
 	long long iEntry;
 	int i, j, k, m, n, p, q;
 	int iAna;
 	int coin[3];
-	int goodEvt, goodSi, goodMCP[2];
+	int nGoodEvt, nGoodPin, nGoodMcp[2];
+	bool goodPin[5], goodPid;
 	double b;
 	string setting;
 	
@@ -118,6 +149,7 @@ void Root2Ana()
 
 	tAna->Branch("setting", &setting);
 	tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke[4]/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I:run/I");
+	tAna->Branch("pid", &pid, "tof/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I:run/I");
 	
 	ostringstream ssRun;	
 	for(runNum=runMin; runNum<=runMax; runNum++)
@@ -185,10 +217,11 @@ void Root2Ana()
 			if(s800.trig==1)
 			{
 				TRandom3 r(0);
+				
 				memset(&ana, 0, sizeof(ana));
 				ana.run=runNum;
-				goodEvt=0;
 				
+				nGoodEvt=0;				
 				for(iAna=0; iAna<4; iAna++)
 				{
 					memset(tPMT, 0, sizeof(tPMT));
@@ -312,52 +345,56 @@ void Root2Ana()
 								ana.xPla[iAna][j]=(tPMT[2+k]+tPMT[3+k]-tPMT[0+k]-tPMT[1+k])/2;
 								ana.yPla[iAna][j]=(tPMT[0+k]+tPMT[3+k]-tPMT[1+k]-tPMT[2+k])/2;
 							}
-						memset(goodMCP, 0, sizeof(goodMCP));
-						for(p=0; p<8; p++)
-							if(mqdcMCP.data[p]>LQDCMCP[p]&&mqdcMCP.data[p]<HQDC)
-							{
-								m=p/4;
-								goodMCP[m]++;
-							}
-							
-						for(k=0; k<2; k++)
-							if(goodMCP[k]==4)
-							{
-								ana.xMCP[iAna][k]=1.0*(mqdcMCP.data[0+4*k]-LQDCMCP[0+4*k]+mqdcMCP.data[3+4*k]-LQDCMCP[3+4*k]-mqdcMCP.data[1+4*k]-LQDCMCP[1+4*k]-mqdcMCP.data[2+4*k]-LQDCMCP[2+4*k])/1.0/(mqdcMCP.data[0+4*k]-LQDCMCP[0+4*k]+mqdcMCP.data[3+4*k]-LQDCMCP[3+4*k]+mqdcMCP.data[1+4*k]-LQDCMCP[1+4*k]+mqdcMCP.data[2+4*k]-LQDCMCP[2+4*k]);
-								
-								ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*ana.xMCP[0][k]+CALXMCP[k][2]*pow(ana.xMCP[0][k],2)+CALXMCP[k][3]*pow(ana.xMCP[0][k],3);
-								
-								ana.yMCP[iAna][k]=1.0*(mqdcMCP.data[1+4*k]-LQDCMCP[1+4*k]+mqdcMCP.data[3+4*k]-LQDCMCP[3+4*k]-mqdcMCP.data[0+4*k]-LQDCMCP[0+4*k]-mqdcMCP.data[2+4*k]-LQDCMCP[2+4*k])/1.0/(mqdcMCP.data[0+4*k]-LQDCMCP[0+4*k]+mqdcMCP.data[3+4*k]-LQDCMCP[3+4*k]+mqdcMCP.data[1+4*k]-LQDCMCP[1+4*k]+mqdcMCP.data[2+4*k]-LQDCMCP[2+4*k]);
-								
-								ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*ana.yMCP[0][k]+CALYMCP[k][2]*pow(ana.yMCP[0][k],2)+CALYMCP[k][3]*pow(ana.yMCP[0][k],3);
-							}
-
-						ana.tke[iAna]=0;
-						goodSi=0;
-						for(q=0; q<5; q++)
-							if(s800.pin[q]>LPIN&&s800.pin[q]<HPIN)
-							{
-								ana.delE[iAna][q]=CALPIN[q][0]+CALPIN[q][1]*s800.pin[q];
-								ana.tke[iAna]+=ana.delE[iAna][q];
-								goodSi++;
-							}
-						if(s800.pin[0]>LPIN&&s800.pin[0]<HPIN)
-							ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*s800.pin[iAna]); //consider the absorption effect of material in front of Si detectors
-							
 						b=LOF/ana.tof[iAna]/0.299792458;
 						if(b>0&&b<1)
 						{
 							ana.beta[iAna]=b;
 							ana.gamma[iAna]=1/sqrt(1-b*b);
-							if(s800.pin[0]>LPIN&&s800.pin[0]<HPIN&&goodSi>1)
+							
+							ana.tke[iAna]=0;
+							nGoodPin=0;
+							memset(goodPin, 0, sizeof(goodPin));
+							for(q=0; q<5; q++)
+								if(s800.pin[q]>LPIN&&s800.pin[q]<HPIN)
+								{
+									goodPin[q]=true;
+									nGoodPin++;
+									
+									ana.delE[iAna][q]=CALPIN[q][0]+CALPIN[q][1]*(s800.pin[q]+r.Uniform(-0.5,0.5));
+									ana.tke[iAna]+=ana.delE[iAna][q];									
+								}
+								
+							if(nGoodPin>1&&goodPin[0])
 							{
-								ana.Z[iAna]=ana.delE[iAna][0]/sqrt(1/b/b*log(5930.0/(1/b/b-1))-1);
-								ana.Z[iAna]=CALZ[0]+CALZ[1]*ana.Z[iAna]+CALZ[2]*pow(ana.Z[iAna],2);
+								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
+								
+								ana.Z[iAna]=sqrt( ana.delE[iAna][0] / (log(5930/(1/b/b-1))/b/b-1) );
+								ana.Z[iAna]=CALZ[0]+CALZ[1]*ana.Z[iAna];
 								ana.Zi[iAna]=TMath::Nint(ana.Z[iAna]);
 								ana.dZ[iAna]=ana.Z[iAna]-ana.Zi[iAna];
-								for(k=0; k<2; k++)
-									if(goodMCP[k]==4)
+								
+								memset(calQdcMcp, 0, sizeof(calQdcMcp));
+								memset(nGoodMcp, 0, sizeof(nGoodMcp));
+								for(p=0; p<8; p++)
+									if(mqdcMCP.data[p]>LQDCMCP[p]&&mqdcMCP.data[p]<HQDC)
 									{
+										m=p/4;
+										nGoodMcp[m]++;
+										calQdcMcp[p]=mqdcMCP.data[p]-LQDCMCP[p]+r.Uniform(-0.5,0.5);
+									}
+									
+								for(k=0; k<2; k++)
+									if(nGoodMcp[k]==4)
+									{
+										ana.xMCP[iAna][k]=(calQdcMcp[1+4*k]+calQdcMcp[2+4*k]-calQdcMcp[0+4*k]-calQdcMcp[3+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
+										
+										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*ana.xMCP[0][k]+CALXMCP[k][2]*pow(ana.xMCP[0][k],2)+CALXMCP[k][3]*pow(ana.xMCP[0][k],3);
+										
+										ana.yMCP[iAna][k]=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
+										
+										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*ana.yMCP[0][k]+CALYMCP[k][2]*pow(ana.yMCP[0][k],2)+CALYMCP[k][3]*pow(ana.yMCP[0][k],3);
+										
+										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
 										ana.Q[iAna][k]=ana.tke[iAna]/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
@@ -374,17 +411,95 @@ void Root2Ana()
 										if(ana.Am3Z[iAna][k]<0)
 											ana.dAm3Z[iAna][k]+=1;
 									}
+								
+								if(nGoodMcp[0]==4)
+									nGoodEvt++;
 							}
 						}
-						
-						// if(b>0&&b<1&&s800.pin[0]>LPIN&&s800.pin[0]<HPIN&&goodSi>1&&goodMCP[0]==4)
-						if(b>0&&b<1&&s800.pin[0]>LPIN&&s800.pin[0]<HPIN&&goodSi>1)
-							goodEvt++;
 					}
 				}
 				
-				if(goodEvt>1)
-					tAna->Fill();
+				if(nGoodEvt>1)
+				{
+					//begin to fill branch of pid
+					goodPid=false;
+					memset(&pid, 0, sizeof(pid));
+					pid.run=runNum;
+
+					if(s800.mesyTDC[0]>LTDC&&s800.mesyTDC[0]<HTDC&&s800.mesyTDC[2]>LTDC&&s800.mesyTDC[2]<HTDC&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
+					{
+						pid.tof=CALTOF[0]+CALTOF[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
+						
+						b=LOF/pid.tof/0.299792458;
+						if(b>0&&b<1)
+						{
+							pid.beta=b;
+							pid.gamma=1/sqrt(1-b*b);
+							nGoodPin=0;
+							memset(goodPin, 0, sizeof(goodPin));
+							pid.tke=0;
+							for(i=0; i<5; i++)
+								if(s800.pin[i]>LPIN&&s800.pin[i]<HPIN)
+								{
+									goodPin[i]=true;
+									nGoodPin++;
+									pid.delE[i]=CALPIN[i][0]+CALPIN[i][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
+									pid.tke+=pid.delE[i];
+								}
+							if(nGoodPin>0&&goodPin[0])
+							{
+								pid.tke+=CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
+								pid.Z=sqrt( s800.pin[0] / (log(5930/(1/b/b-1))/b/b-1) );
+								pid.Z=CALZ[0]+CALZ[1]*pid.Z;
+								pid.Zi=TMath::Nint(pid.Z);
+								pid.dZ=pid.Z-pid.Zi;
+								
+								memset(calQdcMcp, 0, sizeof(calQdcMcp));
+								memset(nGoodMcp, 0, sizeof(nGoodMcp));
+								for(i=0; i<8; i++)
+									if(mqdcMCP.data[i]>LQDCMCP[i]&&mqdcMCP.data[i]<HQDC)
+									{
+										m=i/4;
+										nGoodMcp[m]++;
+										calQdcMcp[i]=mqdcMCP.data[i]-LQDCMCP[i]+r.Uniform(-0.5,0.5);
+									}
+									
+								for(i=0; i<2; i++)
+									if(nGoodMcp[i]==4)
+									{
+										pid.xMCP[i]=(calQdcMcp[1+4*i]+calQdcMcp[2+4*i]-calQdcMcp[0+4*i]-calQdcMcp[3+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
+										
+										pid.xMCP[i]=CALXMCP[i][0]+CALXMCP[i][1]*pid.xMCP[i]+CALXMCP[i][2]*pow(pid.xMCP[i],2)+CALXMCP[i][3]*pow(pid.xMCP[i],3);
+										
+										pid.yMCP[i]=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
+										
+										pid.yMCP[i]=CALYMCP[i][0]+CALYMCP[i][1]*pid.yMCP[i]+CALYMCP[i][2]*pow(pid.yMCP[i],2)+CALYMCP[i][3]*pow(pid.yMCP[i],3);
+										
+
+										pid.brho[i]=BRHO0*(1+pid.xMCP[i]/DISP/100);
+										pid.AoQ[i]=pid.brho[i]/pid.beta/pid.gamma*0.32184;
+										pid.Q[i]=pid.tke/(931.4940954*(pid.gamma-1)*pid.AoQ[i]);
+										pid.ZmQ[i]=pid.Z-pid.Q[i];
+										pid.ZImQ[i]=pid.Zi-pid.Q[i];
+										pid.A[i]=pid.AoQ[i]*pid.Q[i];
+										pid.Araw[i]=pid.AoQ[i]*pid.Z;
+										pid.Am2Q[i]=pid.A[i]-2*pid.Q[i];
+										pid.Am3Q[i]=pid.A[i]-3*pid.Q[i];
+										pid.Am2Z[i]=(pid.Q[i]-2)*pid.Zi;
+										pid.Am3Z[i]=(pid.Q[i]-3)*pid.Zi;
+										pid.dAm2Z[i]=pid.Am2Z[i]-TMath::Nint(pid.Am2Z[i]);
+										pid.dAm3Z[i]=pid.Am3Z[i]-TMath::Nint(pid.Am3Z[i]);
+										if(pid.Am3Z[i]<0)
+											pid.dAm3Z[i]+=1;
+									}
+								if(nGoodMcp[0]==4)
+									goodPid=true;
+							}
+						}
+					}
+					if(goodPid)
+						tAna->Fill();
+				}	
 			}	
 		}//end of whole tree
 		fRoot->Close();
@@ -395,7 +510,6 @@ void Root2Ana()
 }//end of whole function
 
 #ifndef __CINT__
-/*
 void StandaloneApplication(int argc, char** argv)
 {
 	Root2Ana();
@@ -405,13 +519,7 @@ int main(int argc, char** argv)
 {
 	TApplication app("ROOT Application", &argc, argv);
 	StandaloneApplication(app.Argc(), app.Argv());
-	app.Run();
-	return 0;
-}
-*/
-int main()
-{
-	Root2Ana();
+	// app.Run();
 	return 0;
 }
 #endif
