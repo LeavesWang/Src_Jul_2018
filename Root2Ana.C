@@ -102,9 +102,12 @@ struct StrtPid
 
 void Root2Ana()
 {		
-	const int LADC=100, HADC=7680, LTDC=10000, HTDC=60000, HQDC=3840, LPIN=10, HPIN=4010;
+	const int LADC=500, HADC=7680, HQDC=3840, LPIN=10, HPIN=4010;
+	const int RNGTDC[16][2]={ {13000,21000}, {12000,21000}, {13000,21000}, {12000,20000}, {34000,56000}, {28000,50000}, {35000,58000}, {35000,58000},  {10000,19000}, {10000,19000}, {10000,19000}, {10000,19000}, {30000,55000}, {10000,32000}, {10000,60000}, {10000,34000} };
+	const int RNGS800TDC[2][2]={ {28000,30000}, {29000,31000} };
 	const int LQDCTOF[8]={800,800,800,800, 780,800,770,800};
 	const int LQDCMCP[8]={726, 730, 745, 742, 700,700,700,700};
+	// const int LQDCMCP[8]={700, 700, 700, 700, 700,700,700,700};
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
 	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope and 0.4886 is related to the material in front of Si detectors.
@@ -112,9 +115,11 @@ void Root2Ana()
 	const double CALXMCP[2][4]={{-4.11869, -26.6253, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
 	const double CALYMCP[2][4]={{0,1,0,0}, {0,1,0,0}};
 	const double CALTOF[2]={570.456, -0.001}; //ns, ns/ps
+	// const double CALTOF[2]={568.103, -0.001}; //ns, ns/ps
 
 	const double BRHO0=3.7221; //Tm
-	const double DISP=112; // unit??
+	// const double BRHO0=3.72110;
+	const double DISP=112; // mm/%
 	const double LOF=60.74; //m
 
 	const double CALZ[2]={1.191, 5.9377};
@@ -289,13 +294,19 @@ void Root2Ana()
 						for(j=0; j<8; j++)
 						{ 
 							if(iAna==2)
+							{
 								k=j+1;
+								p=j;
+							}
 							else
+							{
 								k=2*j+17;
+								p=j+8;
+							}
 							m=2*j+1;
 							n=j/4;
 				
-							if(mtdc.data[k]>LTDC&&mtdc.data[k]<HTDC&&mqdcTOF.data[m]>LQDCTOF[j]&&mqdcTOF.data[m]<HQDC)
+							if(mtdc.data[k]>RNGTDC[p][0]&&mtdc.data[k]<RNGTDC[p][1]&&mqdcTOF.data[m]>LQDCTOF[j]&&mqdcTOF.data[m]<HQDC)
 							{
 								ana.sig[iAna][n][0]++;
 								ana.sig[iAna][n][1]=10*ana.sig[iAna][n][1]+(j+1);
@@ -397,6 +408,7 @@ void Root2Ana()
 										
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
+										// ana.brho[iAna][k]=BRHO0;
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
 										ana.Q[iAna][k]=ana.tke[iAna]/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
 										ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
@@ -420,14 +432,14 @@ void Root2Ana()
 					}
 				}
 				
-				if(nGoodEvt>1)
+				if(nGoodEvt>0)
 				{
 					//begin to fill branch of pid
 					goodPid=false;
 					memset(&pid, 0, sizeof(pid));
 					pid.run=runNum;
 
-					if(s800.mesyTDC[0]>LTDC&&s800.mesyTDC[0]<HTDC&&s800.mesyTDC[2]>LTDC&&s800.mesyTDC[2]<HTDC&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
+					if(s800.mesyTDC[0]>RNGS800TDC[0][0]&&s800.mesyTDC[0]<RNGS800TDC[0][1]&&s800.mesyTDC[2]>RNGS800TDC[1][0]&&s800.mesyTDC[2]<RNGS800TDC[1][1]&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
 					{
 						pid.tof=CALTOF[0]+CALTOF[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
 						
@@ -478,6 +490,7 @@ void Root2Ana()
 										
 
 										pid.brho[i]=BRHO0*(1+pid.xMCP[i]/DISP/100);
+										// pid.brho[i]=BRHO0;
 										pid.AoQ[i]=pid.brho[i]/pid.beta/pid.gamma*0.32184;
 										pid.Q[i]=pid.tke/(931.4940954*(pid.gamma-1)*pid.AoQ[i]);
 										pid.ZmQ[i]=pid.Z-pid.Q[i];

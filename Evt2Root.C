@@ -32,7 +32,7 @@ struct StrtS800
 	int hodoEgy[32]; // 32 crystals
 	int hodoTime;
 	int pin[5];
-	int mesyTDC[16];
+	int mesyTDC[16];  //[0]: time from S800; [2]: time from A1900
 };
 
 void Evt2Root()
@@ -317,6 +317,7 @@ void Evt2Root()
 						if(pBuf-buf>=ringSize-4)
 							continue;
 						// cout<<"CRDCnWords="<<nWords<<endl;
+						iCh=-1;
 						for(i=0; i<nWords-3; i++)
 						{
 							evtWord=*pBuf | *(pBuf+1)<<8;
@@ -327,7 +328,7 @@ void Evt2Root()
 								iCh=evtWord&0x1F;
 								s800.crdcCath[iCRDC][0][iCh]=(evtWord>>6)&0x1FF;
 							}
-							if(iCtrlCRDC==0)
+							if(iCtrlCRDC==0&&iCh!=-1)
 							{
 								iConnect=1+((evtWord>>10)&0x3);
 								s800.crdcCath[iCRDC][iConnect][iCh]=evtWord&0x3FF;
@@ -380,6 +381,7 @@ void Evt2Root()
 					if(pBuf-buf>=ringSize-4)
 						continue;
 					
+					//process pin data: 0X5805
 					nWords=*pBuf | *(pBuf+1)<<8;
 					pBuf+=4;
 					if(pBuf-buf>=ringSize-4)
@@ -403,6 +405,7 @@ void Evt2Root()
 					if(pBuf-buf>=ringSize-4)
 						continue;
 					
+					//process MesytecTDC data: 0X58F0
 					nWords=*pBuf | *(pBuf+1)<<8;
 					pBuf+=4;
 					if(pBuf-buf>=ringSize-4)
@@ -417,7 +420,7 @@ void Evt2Root()
 						pBuf+=2;
 					}
 					
-					cout<<runNum<<"--"<<j<<":  madc.modEC_TS="<<madc.modEC_TS<<",  s800.tS="<<s800.tS<<",  s800.trig="<<s800.trig<<endl;
+					// cout<<runNum<<"--"<<j<<":  madc.modEC_TS="<<madc.modEC_TS<<",  s800.tS="<<s800.tS<<",  s800.trig="<<s800.trig<<endl;
 					tData->Fill();						
 				}							
 			}
