@@ -382,8 +382,8 @@ void Root2Ana()
 									ana.tke[iAna]+=ana.delE[iAna][q];
 								}
 								
-							if(nGoodPin>1&&goodPin[0]) //standard condition
-							// if(goodPin[0]) //loose condition
+							// if(nGoodPin>1&&goodPin[0]) //standard condition
+							if(goodPin[0]) //loose condition
 							{
 								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
 								
@@ -408,13 +408,13 @@ void Root2Ana()
 										xMcpRaw=0;
 										yMcpRaw=0;
 										
-										xMcpRaw=(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]-calQdcMcp[1+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
+										xMcpRaw=(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]-calQdcMcp[1+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]+calQdcMcp[3+4*k]);
 										
-										yMcpRaw=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
+										yMcpRaw=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]+calQdcMcp[3+4*k]);
 										
-										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*yMcpRaw;
+										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*pow(xMcpRaw,3);
 										
-										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*xMcpRaw;
+										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*pow(yMcpRaw,3);
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
@@ -433,16 +433,16 @@ void Root2Ana()
 											ana.dAm3Z[iAna][k]+=1;
 									}
 								
-								if(nGoodMcp[0]==4) //standard condition
-								// if(nGoodMcp[0]>=0) //loose condition
+								// if(nGoodMcp[0]==4) //standard condition
+								if(nGoodMcp[0]>=0) //loose condition
 									nGoodEvt++;
 							}
 						}
 					}
 				}
 				
-				if(nGoodEvt>1) //standard condition
-				// if(nGoodEvt>0) //loose condition
+				// if(nGoodEvt>1) //standard condition
+				if(nGoodEvt>0) //loose condition
 				{
 					//begin to fill branch of pid
 					goodPid=false;
@@ -469,8 +469,8 @@ void Root2Ana()
 									pid.delE[i]=CALPIN_PID[i][0]+CALPIN_PID[i][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
 									pid.tke+=pid.delE[i];
 								}
-							if(nGoodPin>1&&goodPin[0]) //standard condition
-							// if(goodPin[0]) //loose condition
+							// if(nGoodPin>1&&goodPin[0]) //standard condition
+							if(goodPin[0]) //loose condition
 							{
 								pid.tke+=CALPIN_PID[5][0]+CALPIN_PID[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
 								pid.Z=sqrt( s800.pin[0] / (log(5930/(1/b/b-1))/b/b-1) );
@@ -494,9 +494,9 @@ void Root2Ana()
 										xMcpRaw=0;
 										yMcpRaw=0;
 										
-										xMcpRaw=(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]-calQdcMcp[1+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
+										xMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[2+4*i]-calQdcMcp[0+4*i]-calQdcMcp[3+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
 										
-										yMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
+										yMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
 										
 										pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*yMcpRaw;
 										
@@ -518,8 +518,8 @@ void Root2Ana()
 										if(pid.Am3Z[i]<0)
 											pid.dAm3Z[i]+=1;
 									}
-								if(nGoodMcp[0]==4) //standard condition
-								// if(nGoodMcp[0]>=0) //loose condition
+								// if(nGoodMcp[0]==4) //standard condition
+								if(nGoodMcp[0]>=0) //loose condition
 									goodPid=true;
 							}
 						}
