@@ -412,9 +412,9 @@ void Root2Ana()
 										
 										yMcpRaw=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]+calQdcMcp[3+4*k]);
 										
-										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*pow(xMcpRaw,3);
+										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*yMcpRaw;
 										
-										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*pow(yMcpRaw,3);
+										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*xMcpRaw;
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
@@ -498,9 +498,9 @@ void Root2Ana()
 										
 										yMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
 										
-										pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*yMcpRaw;
+										pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*pow(xMcpRaw,3);
 										
-										pid.yMCP[i]=CALYMCP_PID[i][0]+CALYMCP_PID[i][1]*yMcpRaw+CALYMCP_PID[i][2]*pow(yMcpRaw,2)+CALYMCP_PID[i][3]*xMcpRaw;
+										pid.yMCP[i]=CALYMCP_PID[i][0]+CALYMCP_PID[i][1]*yMcpRaw+CALYMCP_PID[i][2]*pow(yMcpRaw,2)+CALYMCP_PID[i][3]*pow(yMcpRaw,3);
 										
 										pid.brho[i]=BRHO0_PID*(1+pid.xMCP[i]/DISP_PID/100);
 										pid.AoQ[i]=pid.brho[i]/pid.beta/pid.gamma*0.32184;
