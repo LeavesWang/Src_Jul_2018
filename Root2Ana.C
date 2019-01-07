@@ -101,28 +101,35 @@ struct StrtPid
 };
 
 void Root2Ana()
-{		
-	const int LADC=500, HADC=7680, HQDC=3840, LPIN=10, HPIN=4010;
-	const int RNGTDC[16][2]={ {13000,21000}, {12000,21000}, {13000,21000}, {12000,20000}, {34000,56000}, {28000,50000}, {35000,58000}, {35000,58000},  {10000,19000}, {10000,19000}, {10000,19000}, {10000,19000}, {30000,55000}, {10000,32000}, {10000,60000}, {10000,34000} };
-	const int RNGS800TDC[2][2]={ {28000,30000}, {29000,31000} };
-	const int LQDCTOF[8]={800,800,800,800, 780,800,770,800};
-	const int LQDCMCP[8]={726, 730, 745, 742, 700,700,700,700};
-	// const int LQDCMCP[8]={700, 700, 700, 700, 700,700,700,700};
+{	
+	const int AdcPinLow=10, AdcPinUp=4096;
+	const int AdcTofLow=500, AdcTofUp=7680;
+	const int TdcTofLow[16]={12000, 12000, 12000, 12000, 1, 1, 1, 1, 10000, 10000, 10000, 10000, 1, 1, 1, 1};
+	const int TdcTofUp[16]={22000, 22000, 22000, 22000, 65536, 65536, 65536, 65536, 20000, 20000, 20000, 20000, 65536, 65536, 65536, 65536};
+	const int QdcTofLow[8]={800, 800, 800, 800, 780, 800, 770, 800};
+	const int QdcMcpLow[8]={1000, 760, 810, 850, 790, 790, 780, 790};
+	const int QdcUp=3840;
+	
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
-	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope and 0.4886 is related to the material in front of Si detectors.
-
-	const double CALXMCP[2][4]={{-4.11869, -26.6253, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
-	const double CALYMCP[2][4]={{0,1,0,0}, {0,1,0,0}};
-	const double CALTOF[2]={570.456, -0.001}; //ns, ns/ps
-	// const double CALTOF[2]={568.103, -0.001}; //ns, ns/ps
-
-	const double BRHO0=3.7221; //Tm
-	// const double BRHO0=3.72110;
+	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
+	const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; //mm, mm/chx, mm/chx^2, mm/chy
+	const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //mm, mm/chy, mm/chy^2, mm/chx
+	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {577.648,-0.001}, {500,-0.001}}; //ns, ns/ps
+	const double BRHO0=3.7211; //Tm
 	const double DISP=112; // mm/%
-	const double LOF=60.74; //m
-
-	const double CALZ[2]={1.191, 5.9377};
+	const double LOF=60.740; //m
+	const double CALZ[2]={0, 1};
+	
+	const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 700,700,700,700};
+	const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
+	const double CALXMCP_PID[2][4]={{-4.11869, -26.62532, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
+	const double CALYMCP_PID[2][4]={{0,1,0,0}, {0,1,0,0}};
+	const double CALTOF_PID[2]={570.4559, -0.001}; //ns, ns/ps
+	const double BRHO0_PID=3.7221; //Tm
+	const double DISP_PID=112; // mm/%
+	const double LOF_PID=60.74; //m
+	const double CALZ_PID[2]={1.191, 5.9377};
 	
 	string sSet[2]={"PS_270_382", "RS_270_382"};
 	
@@ -144,6 +151,7 @@ void Root2Ana()
 	bool goodPin[5], goodPid;
 	double b;
 	string setting;
+	double xMcpRaw, yMcpRaw;
 	
 	int runMin, runMax, runNum;
 	cout<<"Input minimum and maximum numbers of run: ";
@@ -157,7 +165,7 @@ void Root2Ana()
 	tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke[4]/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I:run/I");
 	tAna->Branch("pid", &pid, "tof/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I:run/I");
 	
-	ostringstream ssRun;	
+	ostringstream ssRun;
 	for(runNum=runMin; runNum<=runMax; runNum++)
 	{
 		ssRun.str("");
@@ -235,12 +243,11 @@ void Root2Ana()
 					memset(egyDet, 0, sizeof(egyDet));
 					
 					if(iAna==0) //For TAC+ADC+clock
-					{
 						for(i=0; i<8; i++)
 						{
 							j=2*i+1;
 							k=i/4;
-							if(madc.data[i]>LADC&&madc.data[i]<HADC&&mqdcTOF.data[j]>LQDCTOF[i]&&mqdcTOF.data[j]<HQDC)
+							if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp&&mqdcTOF.data[j]>QdcTofLow[i]&&mqdcTOF.data[j]<QdcUp)
 							{
 								ana.sig[0][k][0]++;
 								ana.sig[0][k][1]=10*ana.sig[0][k][1]+(i+1);
@@ -248,7 +255,6 @@ void Root2Ana()
 								ana.egy[0][i]=mqdcTOF.data[j]+r.Uniform(-0.5,0.5);
 							}
 						}
-					}
 					
 					if(iAna==1) //For TAC+ADC
 					{
@@ -258,7 +264,7 @@ void Root2Ana()
 							k=2*(i-8)+9;
 							m=i-8;
 							p=i-4;
-							if(madc.data[i]>LADC&&madc.data[i]<HADC&&mqdcTOF.data[j]>LQDCTOF[i-8]&&mqdcTOF.data[j]<HQDC&&mqdcTOF.data[k]>LQDCTOF[i-4]&&mqdcTOF.data[k]<HQDC)
+							if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp&&mqdcTOF.data[j]>QdcTofLow[m]&&mqdcTOF.data[j]<QdcUp&&mqdcTOF.data[k]>QdcTofLow[p]&&mqdcTOF.data[k]<QdcUp)
 							{
 								ana.sig[1][0][0]++;
 								ana.sig[1][1][0]++;
@@ -285,14 +291,14 @@ void Root2Ana()
 							if(coin[0]==ana.sig[1][0][0])
 							{
 								ana.tof[1]/=coin[0];
-								ana.amp[1]/=coin[0];	
+								ana.amp[1]/=coin[0];
 							}
 						}
 					}
 					
 					if(iAna>=2)
 						for(j=0; j<8; j++)
-						{ 
+						{
 							if(iAna==2)
 							{
 								k=j+1;
@@ -306,7 +312,7 @@ void Root2Ana()
 							m=2*j+1;
 							n=j/4;
 				
-							if(mtdc.data[k]>RNGTDC[p][0]&&mtdc.data[k]<RNGTDC[p][1]&&mqdcTOF.data[m]>LQDCTOF[j]&&mqdcTOF.data[m]<HQDC)
+							if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p]&&mqdcTOF.data[m]>QdcTofLow[j]&&mqdcTOF.data[m]<QdcUp)
 							{
 								ana.sig[iAna][n][0]++;
 								ana.sig[iAna][n][1]=10*ana.sig[iAna][n][1]+(j+1);
@@ -340,7 +346,7 @@ void Root2Ana()
 								{
 									timeDet[k]/=coin[k+1];
 									egyDet[k]/=coin[k+1];
-								}									
+								}
 							}
 
 							ana.tof[iAna]=timeDet[1]-timeDet[0];
@@ -349,7 +355,7 @@ void Root2Ana()
 					
 					if(ana.sig[iAna][0][0]>0&&ana.sig[iAna][1][0]>0)
 					{
-						ana.tof[iAna]=CALTOF[0]+CALTOF[1]*ana.tof[iAna];
+						ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
 						for(j=0; j<2; j++)
 							if(ana.sig[iAna][j][0]==4)
 							{
@@ -367,16 +373,17 @@ void Root2Ana()
 							nGoodPin=0;
 							memset(goodPin, 0, sizeof(goodPin));
 							for(q=0; q<5; q++)
-								if(s800.pin[q]>LPIN&&s800.pin[q]<HPIN)
+								if(s800.pin[q]>AdcPinLow&&s800.pin[q]<AdcPinUp)
 								{
 									goodPin[q]=true;
 									nGoodPin++;
 									
 									ana.delE[iAna][q]=CALPIN[q][0]+CALPIN[q][1]*(s800.pin[q]+r.Uniform(-0.5,0.5));
-									ana.tke[iAna]+=ana.delE[iAna][q];									
+									ana.tke[iAna]+=ana.delE[iAna][q];
 								}
 								
-							if(nGoodPin>1&&goodPin[0])
+							if(nGoodPin>1&&goodPin[0]) //standard condition
+							// if(goodPin[0]) //loose condition
 							{
 								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
 								
@@ -388,27 +395,28 @@ void Root2Ana()
 								memset(calQdcMcp, 0, sizeof(calQdcMcp));
 								memset(nGoodMcp, 0, sizeof(nGoodMcp));
 								for(p=0; p<8; p++)
-									if(mqdcMCP.data[p]>LQDCMCP[p]&&mqdcMCP.data[p]<HQDC)
+									if(mqdcMCP.data[p]>QdcMcpLow[p]&&mqdcMCP.data[p]<QdcUp)
 									{
 										m=p/4;
 										nGoodMcp[m]++;
-										calQdcMcp[p]=mqdcMCP.data[p]-LQDCMCP[p]+r.Uniform(-0.5,0.5);
+										calQdcMcp[p]=mqdcMCP.data[p]-QdcMcpLow[p]+r.Uniform(-0.5,0.5);
 									}
 									
 								for(k=0; k<2; k++)
 									if(nGoodMcp[k]==4)
 									{
-										ana.xMCP[iAna][k]=(calQdcMcp[1+4*k]+calQdcMcp[2+4*k]-calQdcMcp[0+4*k]-calQdcMcp[3+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
+										xMcpRaw=0;
+										yMcpRaw=0;
 										
-										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*ana.xMCP[0][k]+CALXMCP[k][2]*pow(ana.xMCP[0][k],2)+CALXMCP[k][3]*pow(ana.xMCP[0][k],3);
+										xMcpRaw=(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]-calQdcMcp[1+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
 										
-										ana.yMCP[iAna][k]=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
+										yMcpRaw=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]);
 										
-										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*ana.yMCP[0][k]+CALYMCP[k][2]*pow(ana.yMCP[0][k],2)+CALYMCP[k][3]*pow(ana.yMCP[0][k],3);
+										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*yMcpRaw;
 										
+										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*xMcpRaw;
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
-										// ana.brho[iAna][k]=BRHO0;
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
 										ana.Q[iAna][k]=ana.tke[iAna]/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
 										ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
@@ -425,25 +433,27 @@ void Root2Ana()
 											ana.dAm3Z[iAna][k]+=1;
 									}
 								
-								if(nGoodMcp[0]==4)
+								if(nGoodMcp[0]==4) //standard condition
+								// if(nGoodMcp[0]>=0) //loose condition
 									nGoodEvt++;
 							}
 						}
 					}
 				}
 				
-				if(nGoodEvt>0)
+				if(nGoodEvt>1) //standard condition
+				// if(nGoodEvt>0) //loose condition
 				{
 					//begin to fill branch of pid
 					goodPid=false;
 					memset(&pid, 0, sizeof(pid));
 					pid.run=runNum;
 
-					if(s800.mesyTDC[0]>RNGS800TDC[0][0]&&s800.mesyTDC[0]<RNGS800TDC[0][1]&&s800.mesyTDC[2]>RNGS800TDC[1][0]&&s800.mesyTDC[2]<RNGS800TDC[1][1]&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
+					if(0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
 					{
-						pid.tof=CALTOF[0]+CALTOF[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
+						pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
 						
-						b=LOF/pid.tof/0.299792458;
+						b=LOF_PID/pid.tof/0.299792458;
 						if(b>0&&b<1)
 						{
 							pid.beta=b;
@@ -452,45 +462,47 @@ void Root2Ana()
 							memset(goodPin, 0, sizeof(goodPin));
 							pid.tke=0;
 							for(i=0; i<5; i++)
-								if(s800.pin[i]>LPIN&&s800.pin[i]<HPIN)
+								if(s800.pin[i]>AdcPinLow&&s800.pin[i]<AdcPinUp)
 								{
 									goodPin[i]=true;
 									nGoodPin++;
-									pid.delE[i]=CALPIN[i][0]+CALPIN[i][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
+									pid.delE[i]=CALPIN_PID[i][0]+CALPIN_PID[i][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
 									pid.tke+=pid.delE[i];
 								}
-							if(nGoodPin>0&&goodPin[0])
+							if(nGoodPin>1&&goodPin[0]) //standard condition
+							// if(goodPin[0]) //loose condition
 							{
-								pid.tke+=CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
+								pid.tke+=CALPIN_PID[5][0]+CALPIN_PID[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
 								pid.Z=sqrt( s800.pin[0] / (log(5930/(1/b/b-1))/b/b-1) );
-								pid.Z=CALZ[0]+CALZ[1]*pid.Z;
+								pid.Z=CALZ_PID[0]+CALZ_PID[1]*pid.Z;
 								pid.Zi=TMath::Nint(pid.Z);
 								pid.dZ=pid.Z-pid.Zi;
 								
 								memset(calQdcMcp, 0, sizeof(calQdcMcp));
 								memset(nGoodMcp, 0, sizeof(nGoodMcp));
 								for(i=0; i<8; i++)
-									if(mqdcMCP.data[i]>LQDCMCP[i]&&mqdcMCP.data[i]<HQDC)
+									if(mqdcMCP.data[i]>QdcMcpLow_Pid[i]&&mqdcMCP.data[i]<QdcUp)
 									{
 										m=i/4;
 										nGoodMcp[m]++;
-										calQdcMcp[i]=mqdcMCP.data[i]-LQDCMCP[i]+r.Uniform(-0.5,0.5);
+										calQdcMcp[i]=mqdcMCP.data[i]-QdcMcpLow_Pid[i]+r.Uniform(-0.5,0.5);
 									}
 									
 								for(i=0; i<2; i++)
 									if(nGoodMcp[i]==4)
 									{
-										pid.xMCP[i]=(calQdcMcp[1+4*i]+calQdcMcp[2+4*i]-calQdcMcp[0+4*i]-calQdcMcp[3+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
+										xMcpRaw=0;
+										yMcpRaw=0;
 										
-										pid.xMCP[i]=CALXMCP[i][0]+CALXMCP[i][1]*pid.xMCP[i]+CALXMCP[i][2]*pow(pid.xMCP[i],2)+CALXMCP[i][3]*pow(pid.xMCP[i],3);
+										xMcpRaw=(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]-calQdcMcp[1+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
 										
-										pid.yMCP[i]=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
+										yMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]);
 										
-										pid.yMCP[i]=CALYMCP[i][0]+CALYMCP[i][1]*pid.yMCP[i]+CALYMCP[i][2]*pow(pid.yMCP[i],2)+CALYMCP[i][3]*pow(pid.yMCP[i],3);
+										pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*yMcpRaw;
 										
-
-										pid.brho[i]=BRHO0*(1+pid.xMCP[i]/DISP/100);
-										// pid.brho[i]=BRHO0;
+										pid.yMCP[i]=CALYMCP_PID[i][0]+CALYMCP_PID[i][1]*yMcpRaw+CALYMCP_PID[i][2]*pow(yMcpRaw,2)+CALYMCP_PID[i][3]*xMcpRaw;
+										
+										pid.brho[i]=BRHO0_PID*(1+pid.xMCP[i]/DISP_PID/100);
 										pid.AoQ[i]=pid.brho[i]/pid.beta/pid.gamma*0.32184;
 										pid.Q[i]=pid.tke/(931.4940954*(pid.gamma-1)*pid.AoQ[i]);
 										pid.ZmQ[i]=pid.Z-pid.Q[i];
@@ -506,7 +518,8 @@ void Root2Ana()
 										if(pid.Am3Z[i]<0)
 											pid.dAm3Z[i]+=1;
 									}
-								if(nGoodMcp[0]==4)
+								if(nGoodMcp[0]==4) //standard condition
+								// if(nGoodMcp[0]>=0) //loose condition
 									goodPid=true;
 							}
 						}
@@ -519,7 +532,7 @@ void Root2Ana()
 		fRoot->Close();
 	}
 	fAna->cd();
-	fAna->Write();
+	tAna->Write();
 	fAna->Close();	
 }//end of whole function
 

@@ -23,20 +23,6 @@ struct StrtMesytec
 	int modEC_TS;
 };
 
-struct StrtS800
-{
-	int tS;
-	int eC;
-	int trig;
-	int tof[8]; //[0]-->[1]: ORTEC TAC+Phillips ADC; [2]-->[7]: Phillips TDC
-	int crdcCath[2][5][64]; //[2]: two CRDC; [5]: [0]---sample; [1]-->[4]---energy
-	int crdcAnode[2][2]; // [0]: energy; [1]: time	
-	int hodoEgy[32]; // 32 crystals
-	int hodoTime;
-	int pin[5];
-	int mesyTDC[16];
-};
-
 struct StrtAna
 {
 	double xMCP[2];
@@ -45,11 +31,13 @@ struct StrtAna
 
 void Root2CalMCP()
 {	
-	const int HQDC=3840;
-	const int LQDC[8]={726, 730, 745, 742, 752,758,764,761};
+	const int QdcUp=3840;
+	const int QdcMcpLow[8]={1000, 760, 810, 850, 790, 790, 780, 790};
 	string sRoot, sCalMcp;
 	StrtMesytec mqdcMCP;
+	int run;
 	double xMCP[2], yMCP[2];
+	double calQdcMcp[8];
 	
 	int iEntry;
 	int i, j, nMCP[2];
@@ -57,6 +45,14 @@ void Root2CalMCP()
 	int runMin, runMax, runNum;
 	cout<<"Input minimum and maximum numbers of run: ";
 	cin>>runMin>>runMax;
+	
+	sCalMcp="/home/kailong/ExpData/Jul2018/CalMCP/calMCP-run-"+to_string(runMin)+"--"+to_string(runMax)+".root";
+	TFile *fCalMcp=new TFile(sCalMcp.c_str(), "RECREATE");
+	TTree *tCalMcp=new TTree("tCalMcp", "tree for calibrating MCP");
+	tCalMcp->Branch("run", &run, "run/I");
+	tCalMcp->Branch("xMCP", xMCP, "xMCP[2]/D");
+	tCalMcp->Branch("yMCP", yMCP, "yMCP[2]/D");
+		
 	ostringstream ssRun;	
 	for(runNum=runMin; runNum<=runMax; runNum++)
 	{
@@ -64,7 +60,6 @@ void Root2CalMCP()
 		ssRun<<setw(4)<<setfill('0')<<runNum;
 		
 		sRoot="/home/kailong/ExpData/Jul2018/RootData/run-"+ssRun.str()+"-00.root";
-		sCalMcp="/home/kailong/ExpData/Jul2018/CalMCP/calMCP-run-"+ssRun.str()+"-00.root";
 		printf("\n**********Now converting %s to %s!**********\n\n", sRoot.c_str(), sCalMcp.c_str());
     	
 		TFile *fRoot = new TFile(sRoot.c_str());
@@ -86,42 +81,38 @@ void Root2CalMCP()
 		
 		tData->SetBranchAddress("mqdcMCP", &mqdcMCP);		
 		
-		TFile *fCalMcp=new TFile(sCalMcp.c_str(), "RECREATE");
-		TTree *tCalMcp=new TTree("tCalMcp", "tree for calibrating MCP");
-		tCalMcp->Branch("xMCP", xMCP, "xMCP[2]/D");
-		tCalMcp->Branch("yMCP", yMCP, "yMCP[2]/D");
-		
 		for(iEntry=0; iEntry<tData->GetEntries(); iEntry++)
 		{
 			tData->GetEntry(iEntry);
 			TRandom3 r(0);
-		
+			run=runNum;
 			memset(xMCP, 0, sizeof(xMCP));
 			memset(yMCP, 0, sizeof(yMCP));				
 			memset(nMCP, 0, sizeof(nMCP));
 			for(i=0; i<8; i++)
-				if(mqdcMCP.data[i]>LQDC[i]&&mqdcMCP.data[i]<HQDC)
+				if(mqdcMCP.data[i]>QdcMcpLow[i]&&mqdcMCP.data[i]<QdcUp)
 				{
 					j=i/4;
 					nMCP[j]++;
+					calQdcMcp[i]=mqdcMCP.data[i]-QdcMcpLow[i]+r.Uniform(-0.5,0.5);
 				}
 			for(i=0; i<2; i++)
 				if(nMCP[i]==4)
 				{
-					xMCP[i]=1.0*(mqdcMCP.data[0+4*i]+mqdcMCP.data[3+4*i]-mqdcMCP.data[1+4*i]-mqdcMCP.data[2+4*i])/1.0/(mqdcMCP.data[0+4*i]+mqdcMCP.data[3+4*i]+mqdcMCP.data[1+4*i]+mqdcMCP.data[2+4*i]);
-					yMCP[i]=1.0*(mqdcMCP.data[1+4*i]+mqdcMCP.data[3+4*i]-mqdcMCP.data[0+4*i]-mqdcMCP.data[2+4*i])/1.0/(mqdcMCP.data[0+4*i]+mqdcMCP.data[3+4*i]+mqdcMCP.data[1+4*i]+mqdcMCP.data[2+4*i]);
+					xMCP[i]=(calQdcMcp[0+4*i]+calQdcMcp[3+4*i]-calQdcMcp[1+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
+					yMCP[i]=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
 				}
 			if(nMCP[0]==4 || nMCP[1]==4)
 				tCalMcp->Fill();	
 		}//end of whole tree
-		fCalMcp->Write();
-		fCalMcp->Close();
 		fRoot->Close();
 	}//end of runs
+	fCalMcp->cd();
+	tCalMcp->Write();
+	fCalMcp->Close();
 }//end of whole function
 
 #ifndef __CINT__
-/*
 void StandaloneApplication(int argc, char** argv)
 {
 	Root2CalMCP();
@@ -131,13 +122,7 @@ int main(int argc, char** argv)
 {
 	TApplication app("ROOT Application", &argc, argv);
 	StandaloneApplication(app.Argc(), app.Argv());
-	app.Run();
-	return 0;
-}
-*/
-int main()
-{
-	Root2CalMCP();
+	// app.Run();
 	return 0;
 }
 #endif
