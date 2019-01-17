@@ -13,6 +13,12 @@
 #include "TTree.h"
 #include "TRandom3.h"
 #include "TMath.h"
+#include "TGraphErrors.h"
+#include "TF1.h"
+#include "TCanvas.h"
+#include "TFitResultPtr.h"
+#include "TFitResult.h"
+#include "TStyle.h"
 
 using namespace std;
 
@@ -102,31 +108,41 @@ struct StrtPid
 
 void Root2Ana()
 {	
+	gStyle->SetOptStat("nemri");
+	gStyle->SetPadGridX(1);
+	gStyle->SetPadGridY(1);
+	gStyle->SetOptFit(1);
+	gStyle->SetCanvasDefH(1080);
+	gStyle->SetCanvasDefW(1920);
+	
 	const int AdcPinLow=10, AdcPinUp=4096;
 	const int AdcTofLow=500, AdcTofUp=7680;
 	const int TdcTofLow[16]={12000, 12000, 12000, 12000, 1, 1, 1, 1, 10000, 10000, 10000, 10000, 1, 1, 1, 1};
 	const int TdcTofUp[16]={22000, 22000, 22000, 22000, 65536, 65536, 65536, 65536, 20000, 20000, 20000, 20000, 65536, 65536, 65536, 65536};
 	const int QdcTofLow[8]={800, 800, 800, 800, 780, 800, 770, 800};
-	const int QdcMcpLow[8]={1000, 760, 810, 850, 790, 790, 780, 790};
+	// const int QdcMcpLow[8]={1000, 760, 810, 850, 790, 790, 780, 790}; //old pedestal values
+	const int QdcMcpLow[8]={759, 765, 802, 791, 752, 764, 765, 760}; //new pedestal values 
 	const int QdcUp=3840;
 	
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
 	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
-	const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; //mm, mm/chx, mm/chx^2, mm/chy
-	const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //mm, mm/chy, mm/chy^2, mm/chx
+	// const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; //mm, mm/chx, mm/chx^2, mm/chy
+	// const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //mm, mm/chy, mm/chy^2, mm/chx
+	const double CALXMCP[2][4]={{0,1,0,0}, {0,1,0,0}}; //mm, mm/chx, mm/chx^2, mm/chy
+	const double CALYMCP[2][4]={{0,1,0,0}, {0,1,0,0}}; //mm, mm/chy, mm/chy^2, mm/chx
 	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {577.648,-0.001}, {500,-0.001}}; //ns, ns/ps
 	const double BRHO0=3.7211; //Tm
 	const double DISP=112; // mm/%
 	const double LOF=60.740; //m
 	const double CALZ[2]={0, 1};
 	
-	const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 700,700,700,700};
+	const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
 	const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
 	const double CALXMCP_PID[2][4]={{-4.11869, -26.62532, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
 	const double CALYMCP_PID[2][4]={{0,1,0,0}, {0,1,0,0}};
 	const double CALTOF_PID[2]={570.4559, -0.001}; //ns, ns/ps
-	const double BRHO0_PID=3.7221; //Tm
+	const double BRHO0_PID=3.7211; //Tm
 	const double DISP_PID=112; // mm/%
 	const double LOF_PID=60.74; //m
 	const double CALZ_PID[2]={1.191, 5.9377};
@@ -141,9 +157,9 @@ void Root2Ana()
 
 	double tPMT[8];
 	double timeDet[2], egyDet[2];
-	double calQdcMcp[8];
+	double calQdcMcp[2][4];
 	
-	long long iEntry;
+	long long iEnt, nEnt;
 	int i, j, k, m, n, p, q;
 	int iAna;
 	int coin[3];
@@ -152,6 +168,8 @@ void Root2Ana()
 	double b;
 	string setting;
 	double xMcpRaw, yMcpRaw;
+	
+	int iLow[4]={6,5,4,7};
 	
 	int runMin, runMax, runNum;
 	cout<<"Input minimum and maximum numbers of run: ";
@@ -191,6 +209,55 @@ void Root2Ana()
     		continue;
     	}
 		
+		double mcpGainMat[8][2];
+		for(i=0; i<8; i++)
+		{
+			mcpGainMat[i][0]=0;
+			mcpGainMat[i][1]=1;
+		}
+		
+		tData->SetEstimate(-1);
+		nEnt=tData->GetEntries();
+		
+		double *errCh=new double[nEnt];
+		for(iEnt=0; iEnt<nEnt; iEnt++)
+			errCh[iEnt]=0.5;
+		string strCanv="gainMat_"+to_string(runNum);
+		TCanvas *cGain=new TCanvas(strCanv.c_str(), strCanv.c_str());
+		cGain->Divide(2,2);
+		bool goodRun=true;
+		TGraphErrors *gr[4];
+		for(i=0; i<4; i++)
+		{
+			j=iLow[i];
+			cGain->cd(i+1);
+			string sCut="mqdcMCP.data["+to_string(i)+"]>"+to_string(QdcMcpLow[i])+"&&mqdcMCP.data["+to_string(i)+"]<3840&&mqdcMCP.data["+to_string(j)+"]>"+to_string(QdcMcpLow[j])+"&&mqdcMCP.data["+to_string(j)+"]<3840";
+			
+			string sDraw="mqdcMCP.data["+to_string(i)+"]-"+to_string(QdcMcpLow[i])+":mqdcMCP.data["+to_string(j)+"]-"+to_string(QdcMcpLow[j])+">>h"+to_string(i)+"_"+to_string(j);
+			
+			printf("Now drawing {%s} of {%s} when {%s}\n\n", sDraw.c_str(), sRoot.c_str(), sCut.c_str());
+			
+			long long nData=tData->Draw(sDraw.c_str(), sCut.c_str(), "goff");
+			if(nData<2)
+			{
+				goodRun=false;
+				break;
+			}
+			double *highGain=tData->GetV1();
+			double *lowGain=tData->GetV2();
+			gr[i]=new TGraphErrors(nData, lowGain, highGain, errCh, errCh);
+			gr[i]->Draw("AP");
+			gr[i]->SetTitle(("high"+to_string(i)+"_vs_low"+to_string(iLow[i])).c_str());
+			TFitResultPtr fitRes=gr[i]->Fit("pol1","MS");
+			mcpGainMat[j][0]=fitRes->Parameter(0);
+			mcpGainMat[j][1]=fitRes->Parameter(1);
+		}
+		delete []errCh;
+		if(!goodRun)
+			continue;
+		cGain->SaveAs(("/home/kailong/ExpData/Jul2018/Graphs/Charts/"+strCanv+".png").c_str());
+		cGain->Close();
+		
 		memset(&madc, 0, sizeof(madc));
 		memset(&mtdc, 0, sizeof(mtdc));
 		memset(&mqdcTOF, 0, sizeof(mqdcTOF));
@@ -224,11 +291,11 @@ void Root2Ana()
 				setting="other_270_382";
 		}
 		
-		for(iEntry=0; iEntry<tData->GetEntries(); iEntry++)
-		// for(iEntry=0; iEntry<10000; iEntry++)
+		for(iEnt=0; iEnt<tData->GetEntries(); iEnt++)
+		// for(iEnt=0; iEnt<10000; iEnt++)
 		{
-			tData->GetEntry(iEntry);
-			if(s800.trig==1)
+			tData->GetEntry(iEnt);
+			if(s800.trig==1||s800.trig==16)
 			{
 				TRandom3 r(0);
 				
@@ -382,8 +449,8 @@ void Root2Ana()
 									ana.tke[iAna]+=ana.delE[iAna][q];
 								}
 								
-							// if(nGoodPin>1&&goodPin[0]) //standard condition
-							if(goodPin[0]) //loose condition
+							if(nGoodPin>1&&goodPin[0]) //standard condition
+							// if(goodPin[0]) //loose condition
 							{
 								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
 								
@@ -394,13 +461,27 @@ void Root2Ana()
 								
 								memset(calQdcMcp, 0, sizeof(calQdcMcp));
 								memset(nGoodMcp, 0, sizeof(nGoodMcp));
-								for(p=0; p<8; p++)
+								for(p=0; p<4; p++)
 									if(mqdcMCP.data[p]>QdcMcpLow[p]&&mqdcMCP.data[p]<QdcUp)
 									{
-										m=p/4;
-										nGoodMcp[m]++;
-										calQdcMcp[p]=mqdcMCP.data[p]-QdcMcpLow[p]+r.Uniform(-0.5,0.5);
+										nGoodMcp[0]++;
+										calQdcMcp[0][p]=mqdcMCP.data[p]-QdcMcpLow[p]+r.Uniform(-0.5,0.5);
 									}
+									
+								for(p=0; p<4; p++)
+								{
+									if(mqdcMCP.data[p]>QdcMcpLow[p]&&mqdcMCP.data[p]<QdcUp)
+									{
+										nGoodMcp[1]++;
+										calQdcMcp[1][p]=mqdcMCP.data[p]-QdcMcpLow[p]+r.Uniform(-0.5,0.5);
+									}
+									m=iLow[p];
+									if(mqdcMCP.data[p]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow[m]&&mqdcMCP.data[m]<QdcUp&&mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m])>QdcUp)
+									{
+										nGoodMcp[1]++;
+										calQdcMcp[1][p]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m]+r.Uniform(-0.5,0.5));
+									}
+								}
 									
 								for(k=0; k<2; k++)
 									if(nGoodMcp[k]==4)
@@ -408,9 +489,9 @@ void Root2Ana()
 										xMcpRaw=0;
 										yMcpRaw=0;
 										
-										xMcpRaw=(calQdcMcp[0+4*k]+calQdcMcp[3+4*k]-calQdcMcp[1+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]+calQdcMcp[3+4*k]);
+										xMcpRaw=(calQdcMcp[k][0]+calQdcMcp[k][3]-calQdcMcp[k][1]-calQdcMcp[k][2])/(calQdcMcp[k][0]+calQdcMcp[k][1]+calQdcMcp[k][2]+calQdcMcp[k][3]);
 										
-										yMcpRaw=(calQdcMcp[1+4*k]+calQdcMcp[3+4*k]-calQdcMcp[0+4*k]-calQdcMcp[2+4*k])/(calQdcMcp[0+4*k]+calQdcMcp[1+4*k]+calQdcMcp[2+4*k]+calQdcMcp[3+4*k]);
+										yMcpRaw=(calQdcMcp[k][1]+calQdcMcp[k][3]-calQdcMcp[k][0]-calQdcMcp[k][2])/(calQdcMcp[k][0]+calQdcMcp[k][1]+calQdcMcp[k][2]+calQdcMcp[k][3]);
 										
 										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*yMcpRaw;
 										
@@ -433,16 +514,16 @@ void Root2Ana()
 											ana.dAm3Z[iAna][k]+=1;
 									}
 								
-								// if(nGoodMcp[0]==4) //standard condition
-								if(nGoodMcp[0]>=0) //loose condition
+								if(nGoodMcp[0]==4||nGoodMcp[1]==4) //standard condition
+								// if(nGoodMcp[0]>=0) //loose condition
 									nGoodEvt++;
 							}
 						}
 					}
 				}
 				
-				// if(nGoodEvt>1) //standard condition
-				if(nGoodEvt>0) //loose condition
+				if(nGoodEvt>1) //standard condition
+				// if(nGoodEvt>0) //loose condition
 				{
 					//begin to fill branch of pid
 					goodPid=false;
@@ -469,8 +550,8 @@ void Root2Ana()
 									pid.delE[i]=CALPIN_PID[i][0]+CALPIN_PID[i][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
 									pid.tke+=pid.delE[i];
 								}
-							// if(nGoodPin>1&&goodPin[0]) //standard condition
-							if(goodPin[0]) //loose condition
+							if(nGoodPin>1&&goodPin[0]) //standard condition
+							// if(goodPin[0]) //loose condition
 							{
 								pid.tke+=CALPIN_PID[5][0]+CALPIN_PID[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
 								pid.Z=sqrt( s800.pin[0] / (log(5930/(1/b/b-1))/b/b-1) );
@@ -480,13 +561,27 @@ void Root2Ana()
 								
 								memset(calQdcMcp, 0, sizeof(calQdcMcp));
 								memset(nGoodMcp, 0, sizeof(nGoodMcp));
-								for(i=0; i<8; i++)
+								for(i=0; i<4; i++)
 									if(mqdcMCP.data[i]>QdcMcpLow_Pid[i]&&mqdcMCP.data[i]<QdcUp)
 									{
-										m=i/4;
-										nGoodMcp[m]++;
-										calQdcMcp[i]=mqdcMCP.data[i]-QdcMcpLow_Pid[i]+r.Uniform(-0.5,0.5);
+										nGoodMcp[0]++;
+										calQdcMcp[0][i]=mqdcMCP.data[i]-QdcMcpLow_Pid[i]+r.Uniform(-0.5,0.5);
 									}
+									
+								for(p=0; p<4; p++)
+								{
+									if(mqdcMCP.data[p]>QdcMcpLow_Pid[p]&&mqdcMCP.data[p]<QdcUp)
+									{
+										nGoodMcp[1]++;
+										calQdcMcp[1][p]=mqdcMCP.data[p]-QdcMcpLow_Pid[p]+r.Uniform(-0.5,0.5);
+									}
+									m=iLow[p];
+									if(mqdcMCP.data[p]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow_Pid[m]&&mqdcMCP.data[m]<QdcUp&&mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m])>QdcUp)
+									{
+										nGoodMcp[1]++;
+										calQdcMcp[1][p]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow_Pid[m]+r.Uniform(-0.5,0.5));
+									}
+								}
 									
 								for(i=0; i<2; i++)
 									if(nGoodMcp[i]==4)
@@ -494,9 +589,9 @@ void Root2Ana()
 										xMcpRaw=0;
 										yMcpRaw=0;
 										
-										xMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[2+4*i]-calQdcMcp[0+4*i]-calQdcMcp[3+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
+										xMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][2]-calQdcMcp[i][0]-calQdcMcp[i][3])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 										
-										yMcpRaw=(calQdcMcp[1+4*i]+calQdcMcp[3+4*i]-calQdcMcp[0+4*i]-calQdcMcp[2+4*i])/(calQdcMcp[0+4*i]+calQdcMcp[1+4*i]+calQdcMcp[2+4*i]+calQdcMcp[3+4*i]);
+										yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 										
 										pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*pow(xMcpRaw,3);
 										
@@ -518,14 +613,14 @@ void Root2Ana()
 										if(pid.Am3Z[i]<0)
 											pid.dAm3Z[i]+=1;
 									}
-								// if(nGoodMcp[0]==4) //standard condition
-								if(nGoodMcp[0]>=0) //loose condition
+								if(nGoodMcp[0]==4||nGoodMcp[1]==4) //standard condition
+								// if(nGoodMcp[0]>=0) //loose condition
 									goodPid=true;
 							}
 						}
 					}
-					if(goodPid)
-						tAna->Fill();
+					// if(goodPid)
+					tAna->Fill();
 				}	
 			}	
 		}//end of whole tree

@@ -40,6 +40,7 @@ void Evt2Root()
 	string sEvt, sRoot;
 	unsigned char ringHead[4];
 	unsigned int evtWord;
+	int run[2];
 	StrtMesytec madc, mtdc, mqdcTOF, mqdcMCP;
 	StrtS800 s800;
 	int ringSize, ringType, bHSig, srcID;
@@ -57,7 +58,6 @@ void Evt2Root()
 		ssRun1<<runNum;
 		ssRun2.str("");
 		ssRun2<<setw(4)<<setfill('0')<<runNum;
-		
 		for(iEvt=0; iEvt<=15; iEvt++)
 		{
 			ssIEvt.str("");
@@ -77,12 +77,15 @@ void Evt2Root()
 			}
 			TFile *fRoot = new TFile(sRoot.c_str(), "RECREATE");
 			TTree *tData = new TTree("tData", "tree of data");
+			tData->Branch("run", run, "run[2]/I");
 			tData->Branch("madc", &madc, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
 			tData->Branch("mtdc", &mtdc, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
 			tData->Branch("mqdcTOF", &mqdcTOF, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
 			tData->Branch("mqdcMCP", &mqdcMCP, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
 			tData->Branch("s800", &s800, "tS/I:eC/I:trig/I:tof[8]/I:crdcCath[2][5][64]/I:crdcAnode[2][2]/I:hodoEgy[32]/I:hodoTime/I:pin[5]/I:mesyTDC[16]/I");
 			int j=0;
+			run[0]=runNum;
+			run[1]=iEvt;
 			while(!fEvt.eof())
 			{
 				j++;
@@ -420,7 +423,7 @@ void Evt2Root()
 						pBuf+=2;
 					}
 					
-					// cout<<runNum<<"--"<<j<<":  madc.modEC_TS="<<madc.modEC_TS<<",  s800.tS="<<s800.tS<<",  s800.trig="<<s800.trig<<endl;
+					cout<<runNum<<"--"<<j<<":  madc.modEC_TS="<<madc.modEC_TS<<",  s800.tS="<<s800.tS<<",  s800.trig="<<s800.trig<<endl;
 					tData->Fill();						
 				}							
 			}
