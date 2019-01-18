@@ -127,10 +127,10 @@ void Root2Ana()
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
 	const double CALPIN[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
-	// const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; //mm, mm/chx, mm/chx^2, mm/chy
-	// const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //mm, mm/chy, mm/chy^2, mm/chx
-	const double CALXMCP[2][4]={{0,1,0,0}, {0,1,0,0}}; //mm, mm/chx, mm/chx^2, mm/chy
-	const double CALYMCP[2][4]={{0,1,0,0}, {0,1,0,0}}; //mm, mm/chy, mm/chy^2, mm/chx
+	// const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; // very old //mm, mm/chx, mm/chx^2, mm/chy
+	// const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //very old //mm, mm/chy, mm/chy^2, mm/chx
+	const double CALXMCP[2][10]={{-4.245504,26.865291,-0.648187,0.937215,-0.934104,9.145116,1.563050,0.361719,0.299228,3.418928}, {-4.192607,26.493434,-0.632589,0.316863,-10.361411,11.183932,-18.384848,3.810902,-2.237456,14.872714}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
+	const double CALYMCP[2][10]={{3.667321,19.066746,0.888343,-1.775734,0.092313,10.916001,-0.383990,-0.623856,1.749261,4.134627}, {3.630680,19.075958,2.306319,-1.602641,0.390358,14.122310,-1.435858,-1.437799,-2.333716,5.865452}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y
 	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {577.648,-0.001}, {500,-0.001}}; //ns, ns/ps
 	const double BRHO0=3.7211; //Tm
 	const double DISP=112; // mm/%
@@ -225,7 +225,6 @@ void Root2Ana()
 		string strCanv="gainMat_"+to_string(runNum);
 		TCanvas *cGain=new TCanvas(strCanv.c_str(), strCanv.c_str());
 		cGain->Divide(2,2);
-		bool goodRun=true;
 		TGraphErrors *gr[4];
 		for(i=0; i<4; i++)
 		{
@@ -239,10 +238,7 @@ void Root2Ana()
 			
 			long long nData=tData->Draw(sDraw.c_str(), sCut.c_str(), "goff");
 			if(nData<2)
-			{
-				goodRun=false;
-				break;
-			}
+				continue;
 			double *highGain=tData->GetV1();
 			double *lowGain=tData->GetV2();
 			gr[i]=new TGraphErrors(nData, lowGain, highGain, errCh, errCh);
@@ -253,8 +249,6 @@ void Root2Ana()
 			mcpGainMat[j][1]=fitRes->Parameter(1);
 		}
 		delete []errCh;
-		if(!goodRun)
-			continue;
 		cGain->SaveAs(("/home/kailong/ExpData/Jul2018/Graphs/Charts/"+strCanv+".png").c_str());
 		cGain->Close();
 		
@@ -493,9 +487,9 @@ void Root2Ana()
 										
 										yMcpRaw=(calQdcMcp[k][1]+calQdcMcp[k][3]-calQdcMcp[k][0]-calQdcMcp[k][2])/(calQdcMcp[k][0]+calQdcMcp[k][1]+calQdcMcp[k][2]+calQdcMcp[k][3]);
 										
-										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*yMcpRaw;
+										ana.xMCP[iAna][k]=CALXMCP[k][0]+CALXMCP[k][1]*xMcpRaw+CALXMCP[k][2]*pow(xMcpRaw,2)+CALXMCP[k][3]*yMcpRaw+CALXMCP[k][4]*pow(yMcpRaw,2)+CALXMCP[k][5]*pow(xMcpRaw,3)+CALXMCP[k][6]*pow(yMcpRaw,3)+CALXMCP[k][7]*xMcpRaw*yMcpRaw+CALXMCP[k][8]*pow(xMcpRaw,2)*yMcpRaw+CALXMCP[k][9]*xMcpRaw*pow(yMcpRaw,2);
 										
-										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*xMcpRaw;
+										ana.yMCP[iAna][k]=CALYMCP[k][0]+CALYMCP[k][1]*yMcpRaw+CALYMCP[k][2]*pow(yMcpRaw,2)+CALYMCP[k][3]*xMcpRaw+CALYMCP[k][4]*pow(xMcpRaw,2)+CALYMCP[k][5]*pow(yMcpRaw,3)+CALYMCP[k][6]*pow(xMcpRaw,3)+CALYMCP[k][7]*yMcpRaw*xMcpRaw+CALYMCP[k][8]*pow(yMcpRaw,2)*xMcpRaw+CALYMCP[k][9]*yMcpRaw*pow(xMcpRaw,2);
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
