@@ -143,7 +143,7 @@ void Root2Ana()
 	const double BRHO0=3.7211; //Tm
 	const double DISP=106.84; // mm/%
 	const double LOF=60.763; //m
-	const double CALZ[2]={0, 1};
+	const double CALZ[4][2]={{0,1},{0,1},{0, 10.482},{0,1}};
 	
 	const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
 	const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
@@ -481,7 +481,7 @@ void Root2Ana()
 								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
 								
 								ana.Z[iAna]=sqrt( ana.delE[iAna][0] / (log(5930/(1/b/b-1))/b/b-1) );
-								ana.Z[iAna]=CALZ[0]+CALZ[1]*ana.Z[iAna];
+								ana.Z[iAna]=CALZ[iAna][0]+CALZ[iAna][1]*ana.Z[iAna];
 								ana.Zi[iAna]=TMath::Nint(ana.Z[iAna]);
 								ana.dZ[iAna]=ana.Z[iAna]-ana.Zi[iAna];
 								
