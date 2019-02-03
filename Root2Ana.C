@@ -75,7 +75,6 @@ struct StrtAna
 	double dAm3Z[4][2];
 	int Zi[4];
 	int sig[4][2][2];
-	int run;
 };
 
 struct StrtPid
@@ -103,7 +102,6 @@ struct StrtPid
 	double dAm2Z[2];
 	double dAm3Z[2];
 	int Zi;
-	int run;
 };
 
 void Root2Ana()
@@ -126,8 +124,8 @@ void Root2Ana()
 	
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
-	// const double CALPIN[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,0}};
-	const double CALPIN[6][2]={{-66.945,0.730}, {-127.866,0.696}, {-5641.050,5.462}, {0,3.305}, {0,1}, {0,0}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
+	// const double CALPIN[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+	const double CALPIN[6][2]={{-107.419,0.533}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
 	// const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; // very old //mm, mm/chx, mm/chx^2, mm/chy
 	// const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //very old //mm, mm/chy, mm/chy^2, mm/chx
 	
@@ -140,23 +138,26 @@ void Root2Ana()
 	// const double CALXMCP[2][10]={{-4.245504,26.865291,-0.648187,0.937215,-0.934104,9.145116,1.563050,0.361719,0.299228,3.418928}, {-4.192607,26.493434,-0.632589,0.316863,-10.361411,11.183932,-18.384848,3.810902,-2.237456,14.872714}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //previously
 	// const double CALYMCP[2][10]={{3.667321,19.066746,0.888343,-1.775734,0.092313,10.916001,-0.383990,-0.623856,1.749261,4.134627}, {3.630680,19.075958,2.306319,-1.602641,0.390358,14.122310,-1.435858,-1.437799,-2.333716,5.865452}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //previously
 	
-	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {577.954,-0.001}, {500,-0.001}}; //ns, ns/ps
+	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {576.089,-0.001}, {500,-0.001}}; //ns, ns/ps
 	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {500,-0.001}, {500,-0.001}};
 	const double BRHO0=3.7211; //Tm
 	const double DISP=106.84; // mm/%
 	const double LOF=60.763; //m
-	// const double CALZ[4][2]={{0,1},{0,1},{0, 10.482},{0,1}};
-	const double CALZ[4][2]={{0,1},{0,1},{0, 7.290},{0,1}};
+	// const double CALZ[4][2]={{0,1},{0,1},{0, 7.290},{0,1}};
+	const double CALZ[4][2]={{0,1},{0,1},{0, 1},{0,1}};
 	
-	const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
-	const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
-	const double CALXMCP_PID[2][4]={{-4.11869, -26.62532, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
-	const double CALYMCP_PID[2][4]={{0,1,0,0}, {0,1,0,0}};
-	const double CALTOF_PID[2]={570.4559, -0.001}; //ns, ns/ps
-	const double BRHO0_PID=3.7211; //Tm
-	const double DISP_PID=112; // mm/%
-	const double LOF_PID=60.74; //m
-	const double CALZ_PID[2]={1.191, 5.9377};
+	// const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
+	// const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
+	const double CALPIN_PID[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+	// const double CALXMCP_PID[2][4]={{-4.11869, -26.62532, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
+	// const double CALYMCP_PID[2][4]={{0,1,0,0}, {0,1,0,0}};
+	// const double CALTOF_PID[2]={570.4559, -0.001}; //ns, ns/ps
+	const double CALTOF_PID[2]={500, -0.001};
+	// const double BRHO0_PID=3.7211; //Tm
+	// const double DISP_PID=112; // mm/%
+	// const double LOF_PID=60.74; //m
+	// const double CALZ_PID[2]={1.191, 5.9377};
+	const double CALZ_PID[2]={0, 1};
 	
 	string sSet[2]={"PS_270_382", "RS_270_382"};
 	
@@ -175,9 +176,10 @@ void Root2Ana()
 	int iAna;
 	int nGoodTime[4][2], nQdcTof[4][2];
 	int nGoodEvt, nGoodPin, nGoodMcp[2];
-	bool goodPin[5];
+	bool goodPin[5], goodPid;
 	double b;
 	string setting;
+	int run;
 	double xMcpRaw, yMcpRaw;
 	
 	int iLow[4]={6,5,4,7};
@@ -191,12 +193,15 @@ void Root2Ana()
 	TTree *tAna=new TTree("tAna", "tree for data analysis");
 
 	tAna->Branch("setting", &setting);
-	tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke[4]/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I:run/I");
-	tAna->Branch("pid", &pid, "tof/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I:run/I");
+	tAna->Branch("run", &run, "run/I");
+	tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke[4]/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I");
+	tAna->Branch("pid", &pid, "tof/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I");
 	
 	ostringstream ssRun;
 	for(runNum=runMin; runNum<=runMax; runNum++)
 	{
+		run=runNum;
+		
 		ssRun.str("");
 		ssRun<<setw(4)<<setfill('0')<<runNum;
 		
@@ -308,7 +313,6 @@ void Root2Ana()
 				TRandom3 r(0);
 				
 				memset(&ana, 0, sizeof(ana));
-				ana.run=runNum;
 				
 				nGoodEvt=0;				
 				for(iAna=0; iAna<4; iAna++)
@@ -543,26 +547,26 @@ void Root2Ana()
 											ana.dAm3Z[iAna][k]+=1;
 									}
 								
-								// if(nGoodMcp[0]==4||nGoodMcp[1]==4) //standard condition
-								if(nGoodMcp[0]>=0) //loose condition
+								if(nGoodMcp[0]==4||nGoodMcp[1]==4) //standard condition
 									nGoodEvt++;
 							}
 						}
 					}
 				}
 				
-				// if(nGoodEvt>1) //standard condition
-				if(nGoodEvt>0) //loose condition
+				if(nGoodEvt>1) //standard condition
 				{
 					//begin to fill branch of pid
 					memset(&pid, 0, sizeof(pid));
-					pid.run=runNum;
-
-					if(0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
+					goodPid=false;
+					// if(0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
+					if(ana.sig[2][0][0]==4&&ana.sig[2][1][0]==4)
 					{
-						pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
+						// pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
 						
-						b=LOF_PID/pid.tof/0.299792458;
+						pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*(ana.tD[2][4][0]+ana.tD[2][5][1]+ana.tD[2][6][2]+ana.tD[2][7][3])/4;
+						
+						b=LOF/pid.tof/0.299792458;
 						if(b>0&&b<1)
 						{
 							pid.beta=b;
@@ -589,24 +593,24 @@ void Root2Ana()
 								memset(calQdcMcp, 0, sizeof(calQdcMcp));
 								memset(nGoodMcp, 0, sizeof(nGoodMcp));
 								for(i=0; i<4; i++)
-									if(mqdcMCP.data[i]>QdcMcpLow_Pid[i]&&mqdcMCP.data[i]<QdcUp)
+									if(mqdcMCP.data[i]>QdcMcpLow[i]&&mqdcMCP.data[i]<QdcUp)
 									{
 										nGoodMcp[0]++;
-										calQdcMcp[0][i]=mqdcMCP.data[i]-QdcMcpLow_Pid[i]+r.Uniform(-0.5,0.5);
+										calQdcMcp[0][i]=mqdcMCP.data[i]-QdcMcpLow[i]+r.Uniform(-0.5,0.5);
 									}
 									
 								for(p=0; p<4; p++)
 								{
-									if(mqdcMCP.data[p]>QdcMcpLow_Pid[p]&&mqdcMCP.data[p]<QdcUp)
+									if(mqdcMCP.data[p]>QdcMcpLow[p]&&mqdcMCP.data[p]<QdcUp)
 									{
 										nGoodMcp[1]++;
-										calQdcMcp[1][p]=mqdcMCP.data[p]-QdcMcpLow_Pid[p]+r.Uniform(-0.5,0.5);
+										calQdcMcp[1][p]=mqdcMCP.data[p]-QdcMcpLow[p]+r.Uniform(-0.5,0.5);
 									}
 									m=iLow[p];
-									if(mqdcMCP.data[p]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow_Pid[m]&&mqdcMCP.data[m]<QdcUp&&mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m])>QdcUp)
+									if(mqdcMCP.data[p]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow[m]&&mqdcMCP.data[m]<QdcUp&&mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m])>QdcUp-QdcMcpLow[m])
 									{
 										nGoodMcp[1]++;
-										calQdcMcp[1][p]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow_Pid[m]+r.Uniform(-0.5,0.5));
+										calQdcMcp[1][p]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m]+r.Uniform(-0.5,0.5));
 									}
 								}
 									
@@ -620,11 +624,15 @@ void Root2Ana()
 										
 										yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 										
-										pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*pow(xMcpRaw,3);
+										pid.xMCP[i]=CALXMCP[i][0]+CALXMCP[i][1]*xMcpRaw+CALXMCP[i][2]*pow(xMcpRaw,2)+CALXMCP[i][3]*yMcpRaw+CALXMCP[i][4]*pow(yMcpRaw,2)+CALXMCP[i][5]*pow(xMcpRaw,3)+CALXMCP[i][6]*pow(yMcpRaw,3)+CALXMCP[i][7]*xMcpRaw*yMcpRaw+CALXMCP[i][8]*pow(xMcpRaw,2)*yMcpRaw+CALXMCP[i][9]*xMcpRaw*pow(yMcpRaw,2);
 										
-										pid.yMCP[i]=CALYMCP_PID[i][0]+CALYMCP_PID[i][1]*yMcpRaw+CALYMCP_PID[i][2]*pow(yMcpRaw,2)+CALYMCP_PID[i][3]*pow(yMcpRaw,3);
+										pid.yMCP[i]=CALYMCP[i][0]+CALYMCP[i][1]*yMcpRaw+CALYMCP[i][2]*pow(yMcpRaw,2)+CALYMCP[i][3]*xMcpRaw+CALYMCP[i][4]*pow(xMcpRaw,2)+CALYMCP[i][5]*pow(yMcpRaw,3)+CALYMCP[i][6]*pow(xMcpRaw,3)+CALYMCP[i][7]*yMcpRaw*xMcpRaw+CALYMCP[i][8]*pow(yMcpRaw,2)*xMcpRaw+CALYMCP[i][9]*yMcpRaw*pow(xMcpRaw,2);
+											
+										// pid.xMCP[i]=CALXMCP_PID[i][0]+CALXMCP_PID[i][1]*xMcpRaw+CALXMCP_PID[i][2]*pow(xMcpRaw,2)+CALXMCP_PID[i][3]*pow(xMcpRaw,3);
 										
-										pid.brho[i]=BRHO0_PID*(1+pid.xMCP[i]/DISP_PID/100);
+										// pid.yMCP[i]=CALYMCP_PID[i][0]+CALYMCP_PID[i][1]*yMcpRaw+CALYMCP_PID[i][2]*pow(yMcpRaw,2)+CALYMCP_PID[i][3]*pow(yMcpRaw,3);
+										
+										pid.brho[i]=BRHO0*(1+pid.xMCP[i]/DISP/100);
 										pid.AoQ[i]=pid.brho[i]/pid.beta/pid.gamma*0.32184;
 										pid.Q[i]=pid.tke/(931.4940954*(pid.gamma-1)*pid.AoQ[i]);
 										pid.ZmQ[i]=pid.Z-pid.Q[i];
@@ -640,10 +648,13 @@ void Root2Ana()
 										if(pid.Am3Z[i]<0)
 											pid.dAm3Z[i]+=1;
 									}
+								if(nGoodMcp[0]==4||nGoodMcp[1]==4)
+									goodPid=true;
 							}
 						}
 					}
-					tAna->Fill();
+					if(goodPid)
+						tAna->Fill();
 				}	
 			}	
 		}//end of whole tree
