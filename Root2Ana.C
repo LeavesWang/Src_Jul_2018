@@ -125,26 +125,27 @@ void Root2Ana()
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
 	// const double CALPIN[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-	const double CALPIN[6][2]={{-107.419,0.533}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
+	const double CALPIN[6][2]={{-5.228,0.705}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+	// const double CALPIN[6][2]={{-93.198,0.56}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
 	// const double CALXMCP[2][4]={{-2.62024, 27.6449, -2.11865, 1.01504}, {0,1,0,0}}; // very old //mm, mm/chx, mm/chx^2, mm/chy
 	// const double CALYMCP[2][4]={{2.99088, 18.4523, -4.75117, -1.07836}, {0,1,0,0}}; //very old //mm, mm/chy, mm/chy^2, mm/chx
 	
-	const double CALXMCP[2][10]={{-4.245504,26.865291,-0.648187,0.937215,-0.934104,9.145116,1.563050,0.361719,0.299228,3.418928},{-4.208584,26.386269,-0.304543,0.415816,-7.697048,11.071661,-12.916076,1.957102,-1.032270,10.464503}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
-	const double CALYMCP[2][10]={{3.667321,19.066746,0.888343,-1.775734,0.092313,10.916001,-0.383990,-0.623856,1.749261,4.134627}, {3.654910,19.034117,1.922876,-1.700263,0.096307,14.008710,-1.234624,-1.187265,-1.468057,5.017973}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y
+	const double CALXMCP[2][10]={{-4.266873,26.744376,-0.091763,1.043664,0.047729,9.192694,2.637763,-0.929518,2.057002,0.576644},{-4.197952,26.063769,-0.897071,1.296327,1.163173,11.688477,3.208844,-1.230667,-2.736467,3.004414}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
+	const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727688,18.762672,-0.510619,-1.588118,-0.511164,10.227902,-1.138482,0.227548,0.858177,4.114183}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y
 	
 	// const double CALXMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //for raw pos
 	// const double CALYMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //for raw pos
 	
-	// const double CALXMCP[2][10]={{-4.245504,26.865291,-0.648187,0.937215,-0.934104,9.145116,1.563050,0.361719,0.299228,3.418928}, {-4.192607,26.493434,-0.632589,0.316863,-10.361411,11.183932,-18.384848,3.810902,-2.237456,14.872714}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //previously
-	// const double CALYMCP[2][10]={{3.667321,19.066746,0.888343,-1.775734,0.092313,10.916001,-0.383990,-0.623856,1.749261,4.134627}, {3.630680,19.075958,2.306319,-1.602641,0.390358,14.122310,-1.435858,-1.437799,-2.333716,5.865452}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //previously
-	
-	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {576.089,-0.001}, {500,-0.001}}; //ns, ns/ps
+	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {578.146,-0.001}, {500,-0.001}};
+	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {579.789,-0.001}, {500,-0.001}}; //ns, ns/ps
 	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {500,-0.001}, {500,-0.001}};
 	const double BRHO0=3.7211; //Tm
 	const double DISP=106.84; // mm/%
 	const double LOF=60.763; //m
-	// const double CALZ[4][2]={{0,1},{0,1},{0, 7.290},{0,1}};
-	const double CALZ[4][2]={{0,1},{0,1},{0, 1},{0,1}};
+	const double CALZ[4][2]={{0,1},{0,1},{0,1},{0,1}};
+	const double CALAoQ[4][2][2]={{{0,1},{0,1}}, {{0,1},{0,1}}, {{0,1},{0,1}}, {{0,1},{0,1}}};
+	// const double CALZ[4][2]={{0,1},{0,1},{0.76,7.131},{0,1}};
+	// const double CALAoQ[4][2][2]={{{0,1},{0,1}}, {{0,1},{0,1}}, {{-0.490,1.195},{-0.485,1.194}}, {{0,1},{0,1}}};
 	
 	// const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
 	// const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
@@ -157,6 +158,7 @@ void Root2Ana()
 	// const double DISP_PID=112; // mm/%
 	// const double LOF_PID=60.74; //m
 	// const double CALZ_PID[2]={1.191, 5.9377};
+	const double CALAoQ_PID[2][2]={{0,1}, {0,1}};
 	const double CALZ_PID[2]={0, 1};
 	
 	string sSet[2]={"PS_270_382", "RS_270_382"};
@@ -260,7 +262,7 @@ void Root2Ana()
 			gr[i]=new TGraphErrors(nData, lowGain, highGain, errCh, errCh);
 			gr[i]->Draw("AP");
 			gr[i]->SetTitle(("high"+to_string(i)+"_vs_low"+to_string(iLow[i])).c_str());
-			TFitResultPtr fitRes=gr[i]->Fit("pol1","MS");
+			TFitResultPtr fitRes=gr[i]->Fit("pol1","FS");
 			int fitSt=fitRes;
 			if(fitSt!=0&&fitSt!=4000)
 				continue;
@@ -484,7 +486,7 @@ void Root2Ana()
 								}
 								
 							if(nGoodPin>1&&goodPin[0]) //standard condition
-							{
+							{								
 								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
 								
 								ana.Z[iAna]=sqrt( ana.delE[iAna][0] / (log(5930/(1/b/b-1))/b/b-1) );
@@ -532,6 +534,7 @@ void Root2Ana()
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
 										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
+										ana.AoQ[iAna][k]=CALAoQ[iAna][k][0]+CALAoQ[iAna][k][1]*ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
 										ana.Q[iAna][k]=ana.tke[iAna]/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
 										ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
 										ana.ZImQ[iAna][k]=ana.Zi[iAna]-ana.Q[iAna][k];
@@ -579,7 +582,7 @@ void Root2Ana()
 								{
 									goodPin[i]=true;
 									nGoodPin++;
-									pid.delE[i]=CALPIN_PID[i][0]+CALPIN_PID[i][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
+									pid.delE[i]=CALPIN_PID[i][0]+CALPIN_PID[i][1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
 									pid.tke+=pid.delE[i];
 								}
 							if(nGoodPin>1&&goodPin[0])
@@ -620,7 +623,7 @@ void Root2Ana()
 										xMcpRaw=0;
 										yMcpRaw=0;
 										
-										xMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][2]-calQdcMcp[i][0]-calQdcMcp[i][3])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
+										xMcpRaw=(calQdcMcp[i][0]+calQdcMcp[i][3]-calQdcMcp[i][1]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 										
 										yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 										
@@ -634,6 +637,7 @@ void Root2Ana()
 										
 										pid.brho[i]=BRHO0*(1+pid.xMCP[i]/DISP/100);
 										pid.AoQ[i]=pid.brho[i]/pid.beta/pid.gamma*0.32184;
+										pid.AoQ[i]=CALAoQ_PID[i][0]+CALAoQ_PID[i][1]*pid.AoQ[i];
 										pid.Q[i]=pid.tke/(931.4940954*(pid.gamma-1)*pid.AoQ[i]);
 										pid.ZmQ[i]=pid.Z-pid.Q[i];
 										pid.ZImQ[i]=pid.Zi-pid.Q[i];
@@ -648,7 +652,7 @@ void Root2Ana()
 										if(pid.Am3Z[i]<0)
 											pid.dAm3Z[i]+=1;
 									}
-								if(nGoodMcp[0]==4||nGoodMcp[1]==4)
+								if(nGoodMcp[0]==4||nGoodMcp[1]==4) //standard condition
 									goodPid=true;
 							}
 						}
@@ -665,7 +669,6 @@ void Root2Ana()
 	fAna->Close();	
 }//end of whole function
 
-#ifndef __CINT__
 void StandaloneApplication(int argc, char** argv)
 {
 	Root2Ana();
@@ -678,4 +681,3 @@ int main(int argc, char** argv)
 	// app.Run();
 	return 0;
 }
-#endif
