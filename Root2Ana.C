@@ -234,44 +234,46 @@ void Root2Ana()
 			mcpGainMat[i][1]=1;
 		}
 		
-		tData->SetEstimate(-1);
-		nEnt=tData->GetEntries();
-		
-		double *errCh=new double[nEnt];
-		for(iEnt=0; iEnt<nEnt; iEnt++)
-			errCh[iEnt]=0.5;
-		string strCanv="gainMat_"+to_string(runNum);
-		TCanvas *cGain=new TCanvas(strCanv.c_str(), strCanv.c_str());
-		cGain->Divide(2,2);
-		TGraphErrors *gr[4];
-		for(i=0; i<4; i++)
+		if(runNum>=270)
 		{
-			j=iLow[i];
-			cGain->cd(i+1);
-			string sCut="mqdcMCP.data["+to_string(i)+"]>"+to_string(QdcMcpLow[i])+"&&mqdcMCP.data["+to_string(i)+"]<3840&&mqdcMCP.data["+to_string(j)+"]>"+to_string(QdcMcpLow[j])+"&&mqdcMCP.data["+to_string(j)+"]<3840";
-			
-			string sDraw="mqdcMCP.data["+to_string(i)+"]-"+to_string(QdcMcpLow[i])+":mqdcMCP.data["+to_string(j)+"]-"+to_string(QdcMcpLow[j])+">>h"+to_string(i)+"_"+to_string(j);
-			
-			printf("Now drawing {%s} of {%s} when {%s}\n\n", sDraw.c_str(), sRoot.c_str(), sCut.c_str());
-			
-			long long nData=tData->Draw(sDraw.c_str(), sCut.c_str(), "goff");
-			if(nData<2)
-				continue;
-			double *highGain=tData->GetV1();
-			double *lowGain=tData->GetV2();
-			gr[i]=new TGraphErrors(nData, lowGain, highGain, errCh, errCh);
-			gr[i]->Draw("AP");
-			gr[i]->SetTitle(("high"+to_string(i)+"_vs_low"+to_string(iLow[i])).c_str());
-			TFitResultPtr fitRes=gr[i]->Fit("pol1","FS");
-			int fitSt=fitRes;
-			if(fitSt!=0&&fitSt!=4000)
-				continue;
-			mcpGainMat[j][0]=fitRes->Parameter(0);
-			mcpGainMat[j][1]=fitRes->Parameter(1);			
+			tData->SetEstimate(-1);
+			nEnt=tData->GetEntries();		
+			double *errCh=new double[nEnt];
+			for(iEnt=0; iEnt<nEnt; iEnt++)
+				errCh[iEnt]=0.5;
+			string strCanv="gainMat_"+to_string(runNum);
+			TCanvas *cGain=new TCanvas(strCanv.c_str(), strCanv.c_str());
+			cGain->Divide(2,2);
+			TGraphErrors *gr[4];
+			for(i=0; i<4; i++)
+			{
+				j=iLow[i];
+				cGain->cd(i+1);
+				string sCut="mqdcMCP.data["+to_string(i)+"]>"+to_string(QdcMcpLow[i])+"&&mqdcMCP.data["+to_string(i)+"]<3840&&mqdcMCP.data["+to_string(j)+"]>"+to_string(QdcMcpLow[j])+"&&mqdcMCP.data["+to_string(j)+"]<3840";
+				
+				string sDraw="mqdcMCP.data["+to_string(i)+"]-"+to_string(QdcMcpLow[i])+":mqdcMCP.data["+to_string(j)+"]-"+to_string(QdcMcpLow[j])+">>h"+to_string(i)+"_"+to_string(j);
+				
+				printf("Now drawing {%s} of {%s} when {%s}\n\n", sDraw.c_str(), sRoot.c_str(), sCut.c_str());
+				
+				long long nData=tData->Draw(sDraw.c_str(), sCut.c_str(), "goff");
+				if(nData<2)
+					continue;
+				double *highGain=tData->GetV1();
+				double *lowGain=tData->GetV2();
+				gr[i]=new TGraphErrors(nData, lowGain, highGain, errCh, errCh);
+				gr[i]->Draw("AP");
+				gr[i]->SetTitle(("high"+to_string(i)+"_vs_low"+to_string(iLow[i])).c_str());
+				TFitResultPtr fitRes=gr[i]->Fit("pol1","FS");
+				int fitSt=fitRes;
+				if(fitSt!=0&&fitSt!=4000)
+					continue;
+				mcpGainMat[j][0]=fitRes->Parameter(0);
+				mcpGainMat[j][1]=fitRes->Parameter(1);			
+			}
+			delete []errCh;
+			cGain->SaveAs(("/home/kailong/ExpData/Jul2018/Graphs/Charts/"+strCanv+".png").c_str());
+			cGain->Close();
 		}
-		delete []errCh;
-		cGain->SaveAs(("/home/kailong/ExpData/Jul2018/Graphs/Charts/"+strCanv+".png").c_str());
-		cGain->Close();
 		
 		memset(&madc, 0, sizeof(madc));
 		memset(&mtdc, 0, sizeof(mtdc));
