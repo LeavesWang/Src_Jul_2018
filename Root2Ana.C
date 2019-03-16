@@ -50,7 +50,7 @@ struct StrtAna
 	double amp[4];
 	double tD[4][8][8];
 	double egy[4][8];
-	double xPla[4][2]; //two plastic
+	double xPla[4][2]; //two plastics
 	double yPla[4][2]; //two plastic
 	double xMCP[4][2]; //two gain settings
 	double yMCP[4][2]; //two gain settings
