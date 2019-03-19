@@ -133,26 +133,26 @@ void Root2Ana()
 	// const double CALXMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //for raw pos
 	// const double CALYMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //for raw pos
 	
-	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {580,-0.001}, {500,-0.001}}; //ns, ns/ps
+	const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {578.969,-0.001}, {500,-0.001}}; //ns, ns/ps
 	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {579.789,-0.001}, {500,-0.001}};
 	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {500,-0.001}, {500,-0.001}};
 	const double BRHO0=3.7211; //Tm
 	const double DISP=106.84; // mm/%
 	const double LOF=60.763; //m
-	const double CALZ[4][2]={{0,1},{0,1},{0,1},{0,1}};
+	const double CALZ[4][2]={{0,1},{0,1},{1.7652,5.8384},{0,1}};
 	// const double CALZ[4][2]={{0,1},{0,1},{0.76,7.131},{0,1}};
 	
 	// const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
 	// const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
-	const double CALPIN_PID[6][2]={{28.418,0.673915}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+	const double CALPIN_PID[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
 	// const double CALXMCP_PID[2][4]={{-4.11869, -26.62532, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
 	// const double CALYMCP_PID[2][4]={{0,1,0,0}, {0,1,0,0}};
 	// const double CALTOF_PID[2]={570.4559, -0.001}; //ns, ns/ps
-	const double CALTOF_PID[2]={579.694, -0.001};
+	const double CALTOF_PID[2]={578.969,-0.001};
 	// const double BRHO0_PID=3.7211; //Tm
 	// const double DISP_PID=112; // mm/%
 	// const double LOF_PID=60.74; //m
-	const double CALZ_PID[2]={-0.22466, 7.44209};
+	const double CALZ_PID[2]={1.7652, 5.8384};
 	
 	string sSet[2]={"PS_270_382", "RS_270_382"};
 	
@@ -475,7 +475,6 @@ void Root2Ana()
 							ana.tke[iAna]=0;
 							nGoodPin=0;
 							memset(goodPin, 0, sizeof(goodPin));
-							delE0=0;
 							for(q=0; q<5; q++)
 								if(s800.pin[q]>AdcPinLow&&s800.pin[q]<AdcPinUp)
 								{
@@ -484,15 +483,13 @@ void Root2Ana()
 									
 									ana.delE[iAna][q]=CALPIN[q][0]+CALPIN[q][1]*(s800.pin[q]+r.Uniform(-0.5,0.5));
 									ana.tke[iAna]+=ana.delE[iAna][q];
-									if(q==0)
-										delE0=s800.pin[0]+r.Uniform(-0.5,0.5);
 								}
 								
 							if(nGoodPin>1&&goodPin[0]) //standard condition
 							{								
 								ana.tke[iAna]+=(CALPIN[5][0]+CALPIN[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5))); //consider the absorption effect of material in front of Si detectors
 								
-								ana.Z[iAna]=sqrt( delE0 / (log(5930/(1/b/b-1))/b/b-1) );
+								ana.Z[iAna]=sqrt( (s800.pin[0]+r.Uniform(-0.5,0.5)) / (log(5930/(1/b/b-1))/b/b-1) );
 								ana.Z[iAna]=CALZ[iAna][0]+CALZ[iAna][1]*ana.Z[iAna];
 								ana.Zi[iAna]=TMath::Nint(ana.Z[iAna]);
 								ana.dZ[iAna]=ana.Z[iAna]-ana.Zi[iAna];
@@ -586,7 +583,6 @@ void Root2Ana()
 							nGoodPin=0;
 							memset(goodPin, 0, sizeof(goodPin));
 							pid.tke=0;
-							delE0=0;
 							for(i=0; i<5; i++)
 								if(s800.pin[i]>AdcPinLow&&s800.pin[i]<AdcPinUp)
 								{
@@ -594,13 +590,11 @@ void Root2Ana()
 									nGoodPin++;
 									pid.delE[i]=CALPIN_PID[i][0]+CALPIN_PID[i][1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
 									pid.tke+=pid.delE[i];
-									if(i==0)
-										delE0=s800.pin[0]+r.Uniform(-0.5,0.5);
 								}
 							if(nGoodPin>1&&goodPin[0])
 							{
 								pid.tke+=CALPIN_PID[5][0]+CALPIN_PID[5][1]*(s800.pin[0]+r.Uniform(-0.5,0.5));
-								pid.Z=sqrt( delE0/ (log(5930/(1/b/b-1))/b/b-1) );
+								pid.Z=sqrt( (s800.pin[0]+r.Uniform(-0.5,0.5))/ (log(5930/(1/b/b-1))/b/b-1) );
 								pid.Z=CALZ_PID[0]+CALZ_PID[1]*pid.Z;
 								pid.Zi=TMath::Nint(pid.Z);
 								pid.dZ=pid.Z-pid.Zi;
