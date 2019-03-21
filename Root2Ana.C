@@ -124,7 +124,7 @@ void Root2Ana()
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
 	// const double CALPIN[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-	const double CALPIN[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+	const double CALPIN[6][2]={{0,29.789356}, {0,-19.419355}, {0,-1.756591}, {0,-0.042942}, {0,0.736933}, {2450.078,0}}; //these fitting parameters are only for TKE
 	// const double CALPIN[6][2]={{-93.198,0.56}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
 	
 	const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
@@ -540,7 +540,7 @@ void Root2Ana()
 										}
 										
 										ana.brho[iAna][k]=BRHO0*(1+ana.xMCP[iAna][k]/DISP/100);
-										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184;
+										ana.AoQ[iAna][k]=ana.brho[iAna][k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184043;
 										ana.Q[iAna][k]=ana.tke[iAna]/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
 										ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
 										ana.ZImQ[iAna][k]=ana.Zi[iAna]-ana.Q[iAna][k];
