@@ -123,35 +123,25 @@ void Root2Ana()
 	
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
-	// const double CALPIN[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
 	const double CALPIN[6][2]={{0,29.789356}, {0,-19.419355}, {0,-1.756591}, {0,-0.042942}, {0,0.736933}, {2450.078,0}}; //these fitting parameters are only for TKE
 	// const double CALPIN[6][2]={{-93.198,0.56}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
 	
 	const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
-	const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y
-	
+	const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
 	// const double CALXMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //for raw pos
 	// const double CALYMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //for raw pos
 	
 	const double CALTOF[4][2]={{500,-0.001}, {512.918,-0.001}, {578.969,-0.001}, {500,-0.001}}; //ns, ns/ps
-	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {579.789,-0.001}, {500,-0.001}};
-	// const double CALTOF[4][2]={{500,-0.001}, {500,-0.001}, {500,-0.001}, {500,-0.001}};
 	const double BRHO0=3.7211; //Tm
 	const double DISP=106.84; // mm/%
 	const double LOF=60.763; //m
-	const double CALZ[4][2]={{0,1},{0,1},{1.7652,5.8384},{0,1}};
-	// const double CALZ[4][2]={{0,1},{0,1},{0.76,7.131},{0,1}};
-	
-	// const int QdcMcpLow_Pid[8]={726, 730, 745, 742, 760,760,760,760};
-	// const double CALPIN_PID[6][2]={{0,0.6951}, {0,0.6558}, {0,2.9832}, {0,2.7269}, {0,2.9703}, {0,0.4886}}; //Mev/ch  //0.6951 is the original slope of PIN0 and 0.4886 is related to the material in front of Si detectors.
+	const double CALZ[4][2]={{0,1},{1.6196,5.8565},{1.7652,5.8384},{0,1}};
+
+
 	const double CALPIN_PID[6][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-	// const double CALXMCP_PID[2][4]={{-4.11869, -26.62532, -3.38656, -19.399}, {0,1,0,0}}; //mm, mm/ch, mm/ch^2, mm/ch^3
-	// const double CALYMCP_PID[2][4]={{0,1,0,0}, {0,1,0,0}};
-	// const double CALTOF_PID[2]={570.4559, -0.001}; //ns, ns/ps
+
 	const double CALTOF_PID[2]={578.969,-0.001};
-	// const double BRHO0_PID=3.7211; //Tm
-	// const double DISP_PID=112; // mm/%
-	// const double LOF_PID=60.74; //m
+
 	const double CALZ_PID[2]={1.7652, 5.8384};
 	
 	string sSet[2]={"PS_270_382", "RS_270_382"};
@@ -307,7 +297,7 @@ void Root2Ana()
 		}
 		
 		for(iEnt=0; iEnt<tData->GetEntries(); iEnt++)
-		// for(iEnt=0; iEnt<10000; iEnt++)
+		// for(iEnt=0; iEnt<1000; iEnt++)
 		{
 			tData->GetEntry(iEnt);
 			if(s800.trig==1||s800.trig==16)
@@ -329,12 +319,13 @@ void Root2Ana()
 							j=2*i+1;
 							k=i/4;
 							if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
+							// if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp && mqdcTOF.data[j]>QdcTofLow[i]&&mqdcTOF.data[j]<QdcUp)
 							{
 								ana.sig[0][k][0]++;
 								ana.sig[0][k][1]=10*ana.sig[0][k][1]+(i+1);
 								tPMT[i]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5,0.5));
 								if(mqdcTOF.data[j]>QdcTofLow[i]&&mqdcTOF.data[j]<QdcUp)
-									ana.egy[0][i]=mqdcTOF.data[j]+r.Uniform(-0.5,0.5);
+									ana.egy[0][i]=mqdcTOF.data[j]+r.Uniform(-0.5,0.5)-QdcTofLow[i];
 							}
 						}
 					
@@ -347,6 +338,7 @@ void Root2Ana()
 							m=i-8;
 							p=i-4;
 							if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
+							// if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp && mqdcTOF.data[j]>QdcTofLow[m]&&mqdcTOF.data[j]<QdcUp&&mqdcTOF.data[k]>QdcTofLow[p]&&mqdcTOF.data[k]<QdcUp)
 							{
 								ana.sig[1][0][0]++;
 								ana.sig[1][1][0]++;
@@ -354,8 +346,8 @@ void Root2Ana()
 								ana.sig[1][1][1]=10*ana.sig[1][1][1]+(p+1);
 								if(mqdcTOF.data[j]>QdcTofLow[m]&&mqdcTOF.data[j]<QdcUp&&mqdcTOF.data[k]>QdcTofLow[p]&&mqdcTOF.data[k]<QdcUp)
 								{
-									ana.egy[1][m]=mqdcTOF.data[j]+r.Uniform(-0.5, 0.5);
-									ana.egy[1][p]=mqdcTOF.data[k]+r.Uniform(-0.5, 0.5);
+									ana.egy[1][m]=mqdcTOF.data[j]+r.Uniform(-0.5, 0.5)-QdcTofLow[m];
+									ana.egy[1][p]=mqdcTOF.data[k]+r.Uniform(-0.5, 0.5)-QdcTofLow[p];
 								}
 								ana.tD[1][p][m]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5, 0.5));
 								ana.tD[1][m][p]=-ana.tD[1][p][m];
@@ -408,12 +400,13 @@ void Root2Ana()
 							n=j/4;
 				
 							if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p])
+							// if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p] && mqdcTOF.data[m]>QdcTofLow[j]&&mqdcTOF.data[m]<QdcUp)
 							{
 								ana.sig[iAna][n][0]++;
 								ana.sig[iAna][n][1]=10*ana.sig[iAna][n][1]+(j+1);
 								tPMT[j]=CALTDC*(mtdc.data[k]+r.Uniform(-0.5, 0.5));
 								if(mqdcTOF.data[m]>QdcTofLow[j]&&mqdcTOF.data[m]<QdcUp)
-									ana.egy[iAna][j]=mqdcTOF.data[m]+r.Uniform(-0.5, 0.5);
+									ana.egy[iAna][j]=mqdcTOF.data[m]+r.Uniform(-0.5, 0.5)-QdcTofLow[j];
 							}
 						}
 					
@@ -556,7 +549,7 @@ void Root2Ana()
 											ana.dAm3Z[iAna][k]+=1;
 									}
 								
-								if(runNum==150||runNum==152||runNum==153||nGoodMcp[0]==4||nGoodMcp[1]==4) //standard condition
+								if(runNum==150||runNum==152||runNum==153||((nGoodMcp[0]==4||nGoodMcp[1]==4)&&nQdcTof[iAna][0]==4&&nQdcTof[iAna][1]==4)) //standard condition
 									nGoodEvt++;
 							}
 						}
@@ -568,11 +561,8 @@ void Root2Ana()
 					//begin to fill branch of pid
 					memset(&pid, 0, sizeof(pid));
 					goodPid=false;
-					// if(0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])>=60&&0.0625*(s800.mesyTDC[2]-s800.mesyTDC[0])<=150)
 					if(ana.sig[2][0][0]==4&&ana.sig[2][1][0]==4)
-					{
-						// pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*62.5*((s800.mesyTDC[2]+r.Uniform(-0.5,0.5))-(s800.mesyTDC[0]+r.Uniform(-0.5,0.5)));
-						
+					{						
 						pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*(ana.tD[2][4][0]+ana.tD[2][5][1]+ana.tD[2][6][2]+ana.tD[2][7][3])/4;
 						
 						b=LOF/pid.tof/0.299792458;
