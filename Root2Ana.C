@@ -50,8 +50,8 @@ struct StrtAna
 	double amp[4];
 	double tD[4][8][8];
 	double egy[4][8];
-	double xPla[4][2]; //two plastics
-	double yPla[4][2]; //two plastic
+	double xPla[4][4]; //two plastics; [0] and [1] from time info.; [2] and [3] from amp. info.
+	double yPla[4][4]; //two plastic
 	double xMCP[4][2]; //two gain settings
 	double yMCP[4][2]; //two gain settings
 	double delE[4][5];
@@ -123,8 +123,7 @@ void Root2Ana()
 	
 	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 	const double CALTDC=3.90625; //ps/ch
-	const double CALPIN[6][2]={{0,29.789356}, {0,-19.419355}, {0,-1.756591}, {0,-0.042942}, {0,0.736933}, {2450.078,0}}; //these fitting parameters are only for TKE
-	// const double CALPIN[6][2]={{-93.198,0.56}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}}; //Mev/ch  [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
+	const double CALPIN[6][2]={{0,29.789356}, {0,-19.419355}, {0,-1.756591}, {0,-0.042942}, {0,0.736933}, {2450.078,0}}; //these fitting parameters are only for TKE. [0]--[4]: 5 pin detectors; [5]: additional materilas in front of pins
 	
 	const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
 	const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
@@ -179,7 +178,7 @@ void Root2Ana()
 
 	tAna->Branch("setting", &setting);
 	tAna->Branch("run", &run, "run/I");
-	tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][2]/D:yPla[4][2]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke[4]/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I");
+	tAna->Branch("ana", &ana, "tof[4]/D:amp[4]/D:tD[4][8][8]/D:egy[4][8]/D:xPla[4][4]/D:yPla[4][4]/D:xMCP[4][2]/D:yMCP[4][2]/D:delE[4][5]/D:tke[4]/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[4][2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:sig[4][2][2]/I");
 	tAna->Branch("pid", &pid, "tof/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta/D:gamma/D:Z/D:dZ/D:brho[2]/D:AoQ[2]/D:Q[2]/D:ZmQ[2]/D:ZImQ[2]/D:A[2]/D:Araw[2]/D:Am2Q[2]/D:Am3Q[2]/D:Am2Z[2]/D:Am3Z[2]/D:dAm2Z[2]/D:dAm3Z[2]/D:Zi/I");
 	
 	ostringstream ssRun;
@@ -306,7 +305,8 @@ void Root2Ana()
 				
 				memset(&ana, 0, sizeof(ana));
 				
-				nGoodEvt=0;				
+				nGoodEvt=0;	
+				
 				for(iAna=0; iAna<4; iAna++)
 				{
 					memset(tPMT, 0, sizeof(tPMT));
@@ -325,7 +325,7 @@ void Root2Ana()
 								ana.sig[0][k][1]=10*ana.sig[0][k][1]+(i+1);
 								tPMT[i]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5,0.5));
 								if(mqdcTOF.data[j]>QdcTofLow[i]&&mqdcTOF.data[j]<QdcUp)
-									ana.egy[0][i]=mqdcTOF.data[j]+r.Uniform(-0.5,0.5)-QdcTofLow[i];
+									ana.egy[0][i]=mqdcTOF.data[j]+r.Uniform(-0.5,0.5);
 							}
 						}
 					
@@ -346,8 +346,8 @@ void Root2Ana()
 								ana.sig[1][1][1]=10*ana.sig[1][1][1]+(p+1);
 								if(mqdcTOF.data[j]>QdcTofLow[m]&&mqdcTOF.data[j]<QdcUp&&mqdcTOF.data[k]>QdcTofLow[p]&&mqdcTOF.data[k]<QdcUp)
 								{
-									ana.egy[1][m]=mqdcTOF.data[j]+r.Uniform(-0.5, 0.5)-QdcTofLow[m];
-									ana.egy[1][p]=mqdcTOF.data[k]+r.Uniform(-0.5, 0.5)-QdcTofLow[p];
+									ana.egy[1][m]=mqdcTOF.data[j]+r.Uniform(-0.5, 0.5);
+									ana.egy[1][p]=mqdcTOF.data[k]+r.Uniform(-0.5, 0.5);
 								}
 								ana.tD[1][p][m]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5, 0.5));
 								ana.tD[1][m][p]=-ana.tD[1][p][m];
@@ -361,19 +361,23 @@ void Root2Ana()
 							nQdcTof[1][0]=0;
 							nQdcTof[1][1]=0;
 							for(i=0; i<4; i++)
-								for(j=4; j<8; j++)
-									if(abs(ana.tD[1][i][j])>0)
+							{
+								j=i+4;
+								if(abs(ana.tD[1][i][j])>0)
+								{
+									ana.tof[1]+=ana.tD[1][j][i];
+									nGoodTime[1][0]++;
+									nGoodTime[1][1]++;
+									if(ana.egy[1][j]>QdcTofLow[j]&&ana.egy[1][j]<QdcUp&&ana.egy[1][i]>QdcTofLow[i]&&ana.egy[1][i]<QdcUp)
 									{
-										ana.tof[1]+=ana.tD[1][j][i];
-										nGoodTime[1][0]++;
-										nGoodTime[1][1]++;
-										if(ana.egy[1][j]>QdcTofLow[j]&&ana.egy[1][j]<QdcUp&&ana.egy[1][i]>QdcTofLow[i]&&ana.egy[1][i]<QdcUp)
-										{
-											ana.amp[1]+=ana.egy[1][j]-ana.egy[1][i];
-											nQdcTof[1][0]++;
-											nQdcTof[1][1]++;
-										}
+										ana.egy[1][j]-=QdcTofLow[j];
+										ana.egy[1][i]-=QdcTofLow[i];
+										ana.amp[1]+=(ana.egy[1][j]-ana.egy[1][i]);
+										nQdcTof[1][0]++;
+										nQdcTof[1][1]++;
 									}
+								}
+							}
 							if(nGoodTime[1][0]==ana.sig[1][0][0])
 							{
 								ana.tof[1]/=nGoodTime[1][0];
@@ -406,14 +410,14 @@ void Root2Ana()
 								ana.sig[iAna][n][1]=10*ana.sig[iAna][n][1]+(j+1);
 								tPMT[j]=CALTDC*(mtdc.data[k]+r.Uniform(-0.5, 0.5));
 								if(mqdcTOF.data[m]>QdcTofLow[j]&&mqdcTOF.data[m]<QdcUp)
-									ana.egy[iAna][j]=mqdcTOF.data[m]+r.Uniform(-0.5, 0.5)-QdcTofLow[j];
+									ana.egy[iAna][j]=mqdcTOF.data[m]+r.Uniform(-0.5, 0.5);
 							}
 						}
 					
 					if(iAna!=1)
 						if(ana.sig[iAna][0][0]>0&&ana.sig[iAna][1][0]>0)
 						{
-							for(i=0; i<8; i++)
+							for(i=0; i<7; i++)
 								for(j=i+1; j<8; j++)
 									if(abs(tPMT[i])>0&&abs(tPMT[j])>0)
 									{
@@ -432,6 +436,7 @@ void Root2Ana()
 										nGoodTime[iAna][k]++;
 										if(ana.egy[iAna][i]>QdcTofLow[i]&&ana.egy[iAna][i]<QdcUp)
 										{
+											ana.egy[iAna][i]-=QdcTofLow[i];
 											egyDet[k]+=ana.egy[iAna][i];
 											nQdcTof[iAna][k]++;
 										}									
@@ -458,6 +463,8 @@ void Root2Ana()
 								k=4*j;
 								ana.xPla[iAna][j]=(tPMT[2+k]+tPMT[3+k]-tPMT[0+k]-tPMT[1+k])/(tPMT[0+k]+tPMT[1+k]+tPMT[2+k]+tPMT[3+k]);
 								ana.yPla[iAna][j]=(tPMT[0+k]+tPMT[3+k]-tPMT[1+k]-tPMT[2+k])/(tPMT[0+k]+tPMT[1+k]+tPMT[2+k]+tPMT[3+k]);
+								ana.xPla[iAna][j+2]=log(ana.egy[iAna][0]*ana.egy[iAna][1]/ana.egy[iAna][2]/ana.egy[iAna][3])/log(ana.egy[iAna][0]*ana.egy[iAna][1]*ana.egy[iAna][2]*ana.egy[iAna][3]);
+								ana.yPla[iAna][j+2]=log(ana.egy[iAna][1]*ana.egy[iAna][2]/ana.egy[iAna][0]/ana.egy[iAna][3])/log(ana.egy[iAna][0]*ana.egy[iAna][1]*ana.egy[iAna][2]*ana.egy[iAna][3]);
 							}
 						b=LOF/ana.tof[iAna]/0.299792458;
 						if(b>0&&b<1)
@@ -492,7 +499,7 @@ void Root2Ana()
 								if(runNum>=270)
 								{
 									for(p=0; p<4; p++)
-										if(mqdcMCP.data[p]>QdcMcpLow[p]&&mqdcMCP.data[p]<QdcUp)
+										if(mqdcMCP.data[p]>QdcMcpLow[p]&&mqdcMCP.data[p]<QdcUp&&mtdc.data[15]>11E3&&mtdc.data[15]<24E3)
 										{
 											nGoodMcp[0]++;
 											calQdcMcp[0][p]=mqdcMCP.data[p]-QdcMcpLow[p]+r.Uniform(-0.5,0.5);
