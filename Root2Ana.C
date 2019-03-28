@@ -50,7 +50,7 @@ struct StrtAna
 	double amp[4];
 	double tD[4][8][8];
 	double egy[4][8];
-	double xPla[4][4]; //two plastics; [0] and [1] from time info.; [2] and [3] from amp. info.
+	double xPla[4][4]; //second [4]: [0] for S800 plastic from time info, [1] for A1900 plastic from time info; [2] for S800 plastic from amp info, [3] for A1900 plastic from amp info
 	double yPla[4][4]; //two plastic
 	double xMCP[4][2]; //two gain settings
 	double yMCP[4][2]; //two gain settings
@@ -372,7 +372,7 @@ void Root2Ana()
 									{
 										ana.egy[1][j]-=QdcTofLow[j];
 										ana.egy[1][i]-=QdcTofLow[i];
-										ana.amp[1]+=(ana.egy[1][j]-ana.egy[1][i]);
+										ana.amp[1]+=(1/ana.egy[1][j]-1/ana.egy[1][i]);
 										nQdcTof[1][0]++;
 										nQdcTof[1][1]++;
 									}
@@ -437,7 +437,7 @@ void Root2Ana()
 										if(ana.egy[iAna][i]>QdcTofLow[i]&&ana.egy[iAna][i]<QdcUp)
 										{
 											ana.egy[iAna][i]-=QdcTofLow[i];
-											egyDet[k]+=ana.egy[iAna][i];
+											egyDet[k]+=1/ana.egy[iAna][i];
 											nQdcTof[iAna][k]++;
 										}									
 									}
@@ -457,15 +457,22 @@ void Root2Ana()
 					if(ana.sig[iAna][0][0]>0&&ana.sig[iAna][1][0]>0)
 					{
 						ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
-						for(j=0; j<2; j++)
-							if(nQdcTof[iAna][j]==4)
-							{
-								k=4*j;
-								ana.xPla[iAna][j]=(tPMT[2+k]+tPMT[3+k]-tPMT[0+k]-tPMT[1+k])/(tPMT[0+k]+tPMT[1+k]+tPMT[2+k]+tPMT[3+k]);
-								ana.yPla[iAna][j]=(tPMT[0+k]+tPMT[3+k]-tPMT[1+k]-tPMT[2+k])/(tPMT[0+k]+tPMT[1+k]+tPMT[2+k]+tPMT[3+k]);
-								ana.xPla[iAna][j+2]=log(ana.egy[iAna][0]*ana.egy[iAna][1]/ana.egy[iAna][2]/ana.egy[iAna][3])/log(ana.egy[iAna][0]*ana.egy[iAna][1]*ana.egy[iAna][2]*ana.egy[iAna][3]);
-								ana.yPla[iAna][j+2]=log(ana.egy[iAna][1]*ana.egy[iAna][2]/ana.egy[iAna][0]/ana.egy[iAna][3])/log(ana.egy[iAna][0]*ana.egy[iAna][1]*ana.egy[iAna][2]*ana.egy[iAna][3]);
-							}
+						
+						if(ana.sig[iAna][0][0]==4&&nQdcTof[iAna][0]==4)
+						{
+							ana.xPla[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1])/(tPMT[0]+tPMT[1]+tPMT[2]+tPMT[3]);
+							ana.yPla[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2])/(tPMT[0]+tPMT[1]+tPMT[2]+tPMT[3]);
+							ana.xPla[iAna][2]=log(ana.egy[iAna][0]*ana.egy[iAna][1]/ana.egy[iAna][2]/ana.egy[iAna][3])/log(ana.egy[iAna][0]*ana.egy[iAna][1]*ana.egy[iAna][2]*ana.egy[iAna][3]);
+							ana.yPla[iAna][2]=log(ana.egy[iAna][1]*ana.egy[iAna][2]/ana.egy[iAna][0]/ana.egy[iAna][3])/log(ana.egy[iAna][0]*ana.egy[iAna][1]*ana.egy[iAna][2]*ana.egy[iAna][3]);
+						}
+						if(ana.sig[iAna][0][1]==4&&nQdcTof[iAna][1]==4)
+						{
+							ana.xPla[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6])/(tPMT[4]+tPMT[5]+tPMT[6]+tPMT[7]);
+							ana.yPla[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5])/(tPMT[4]+tPMT[5]+tPMT[6]+tPMT[7]);
+							ana.xPla[iAna][3]=log(ana.egy[iAna][5]*ana.egy[iAna][6]/ana.egy[iAna][4]/ana.egy[iAna][7])/log(ana.egy[iAna][4]*ana.egy[iAna][5]*ana.egy[iAna][6]*ana.egy[iAna][7]);
+							ana.yPla[iAna][3]=log(ana.egy[iAna][4]*ana.egy[iAna][5]/ana.egy[iAna][6]/ana.egy[iAna][7])/log(ana.egy[iAna][4]*ana.egy[iAna][5]*ana.egy[iAna][6]*ana.egy[iAna][7]);
+						}
+							
 						b=LOF/ana.tof[iAna]/0.299792458;
 						if(b>0&&b<1)
 						{
@@ -523,12 +530,11 @@ void Root2Ana()
 									
 								for(k=0; k<2; k++)
 									if(runNum==150||runNum==152||runNum==153||nGoodMcp[k]==4)
-									{
-										xMcpRaw=0;
-										yMcpRaw=0;
-										
+									{										
 										if(runNum>=270)
 										{
+											xMcpRaw=0;
+											yMcpRaw=0;
 										
 											xMcpRaw=(calQdcMcp[k][0]+calQdcMcp[k][3]-calQdcMcp[k][1]-calQdcMcp[k][2])/(calQdcMcp[k][0]+calQdcMcp[k][1]+calQdcMcp[k][2]+calQdcMcp[k][3]);
 											
@@ -626,11 +632,11 @@ void Root2Ana()
 								for(i=0; i<2; i++)
 									if(nGoodMcp[i]==4||runNum==150||runNum==152||runNum==153)
 									{
-										xMcpRaw=0;
-										yMcpRaw=0;
-										
 										if(runNum>=270)
 										{
+											xMcpRaw=0;
+											yMcpRaw=0;
+																					
 											xMcpRaw=(calQdcMcp[i][0]+calQdcMcp[i][3]-calQdcMcp[i][1]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 											
 											yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
