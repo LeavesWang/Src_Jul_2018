@@ -48,7 +48,7 @@ struct StrtAna
 {
 	double tof[4]; //[4]: [0] TAC+ADC+clock; [1] TAC+ADC; [2]: regular CFD+TDC; [3] MCFD16+TDC
 	double tD[4][8][8];
-	double egyPMT[8]; //[8]: energies in 8 PMTs
+	double egyPMT[2][4]; //energies in 4 PMTs and each plastic
 	double egyPla[2]; //[2]: [0] is energy in plastic at S800, [1] is energy in plastic at A1900
 	double xPlaT[4][2]; //[2]: [0] for S800 plastic from time info, [1] for A1900 plastic from time info
 	double yPlaT[4][2];
@@ -102,6 +102,37 @@ struct StrtPid
 	int Zi;
 };
 
+const int AdcPinLow=10, AdcPinUp=4096;
+const int AdcTofLow=500, AdcTofUp=7680;
+const int TdcTofLow[16]={12000, 12000, 12000, 12000, 35000, 29000, 36000, 36000, 10000, 10000, 10000, 10000, 32000, 12000, 1, 14500};
+const int TdcTofUp[16]={22000, 22000, 22000, 22000, 55000, 49000, 56000, 56000, 20000, 20000, 20000, 20000, 52000, 32000, 1, 34500};
+const int QdcTofLow[8]={729, 750, 754, 778, 770, 780, 760, 780};
+const int QdcMcpLow[8]={759, 765, 802, 791, 752, 764, 765, 760}; //new pedestal values 
+const int QdcUp=3840;
+
+const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
+const double CALTDC=3.90625; //ps/ch
+const double CALPIN[5][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+const double CALTKE[6]={-84.202133, 13.182114, -12.209759, 7.753987, 3.089718, 0};
+
+const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
+const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
+// const double CALXMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //for raw pos
+// const double CALYMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //for raw pos
+
+const double CALTOF[4][2]={{500,-0.001}, {513.269,-0.001}, {579.248,-0.001}, {500,-0.001}};
+const double BRHO0=3.7211; //Tm
+const double DISP=106.84; // mm/%
+const double LOF=60.763; //m
+const double CALZ[4][2]={{0,1},{1.0214,5.9613},{1.0616,5.9556},{0,1}};
+// const double CALZ[4][2]={{0,1},{0,1},{0,1},{0,1}};
+
+const double CALTOF_PID[2]={579.248,-0.001};
+const double CALZ_PID[2]={1.0616,5.9556};
+
+const int iLow[4]={6, 5, 4, 7};
+const string sSet[2]={"PS_270_382", "RS_270_382"};
+
 void Root2Ana()
 {	
 	gStyle->SetOptStat("nemri");
@@ -111,41 +142,12 @@ void Root2Ana()
 	gStyle->SetCanvasDefH(1080);
 	gStyle->SetCanvasDefW(1920);
 	
-	const int AdcPinLow=10, AdcPinUp=4096;
-	const int AdcTofLow=500, AdcTofUp=7680;
-	const int TdcTofLow[16]={12000, 12000, 12000, 12000, 35000, 29000, 36000, 36000, 10000, 10000, 10000, 10000, 32000, 12000, 1, 14500};
-	const int TdcTofUp[16]={22000, 22000, 22000, 22000, 55000, 49000, 56000, 56000, 20000, 20000, 20000, 20000, 52000, 32000, 1, 34500};
-	const int QdcTofLow[8]={729, 750, 754, 778, 770, 780, 760, 780};
-	const int QdcMcpLow[8]={759, 765, 802, 791, 752, 764, 765, 760}; //new pedestal values 
-	const int QdcUp=3840;
-	
-	const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
-	const double CALTDC=3.90625; //ps/ch
-	const double CALPIN[5][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-	const double CALTKE[6]={2450.078,29.789356,-19.419355,-1.756591,-0.042942,0.736933};
-	
-	const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
-	const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
-	// const double CALXMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //for raw pos
-	// const double CALYMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //for raw pos
-	
-	const double CALTOF[4][2]={{500,-0.001}, {512.913,-0.001}, {578.897,-0.001}, {500,-0.001}}; 
-	const double BRHO0=3.7211; //Tm
-	const double DISP=106.84; // mm/%
-	const double LOF=60.763; //m
-	const double CALZ[4][2]={{0,1},{1.6474,5.8512},{1.4094,5.8904},{0,1}};
-
-	const double CALTOF_PID[2]={578.969,-0.001};
-	const double CALZ_PID[2]={1.7652, 5.8384};
-	
-	string sSet[2]={"PS_270_382", "RS_270_382"};
-	
-	string sRoot, sAna;
+	string sRoot, sAna;	
 	StrtMesytec madc, mtdc, mqdcTOF, mqdcMCP;
 	StrtS800 s800;
 	StrtAna ana;
 	StrtPid pid;
-
+	
 	double tPMT[8], timeDet[2];
 	double calQdcMcp[2][4];
 	
@@ -158,10 +160,8 @@ void Root2Ana()
 	double b;
 	string setting;
 	int run;
-	double xMcpRaw, yMcpRaw;
-	
-	int iLow[4]={6,5,4,7};
-	
+	double xMcpRaw=0, yMcpRaw=0;
+		
 	int runMin, runMax, runNum;
 	cout<<"Input minimum and maximum numbers of run: ";
 	cin>>runMin>>runMax;
@@ -172,9 +172,9 @@ void Root2Ana()
 
 	tAna->Branch("setting", &setting);
 	tAna->Branch("run", &run, "run/I");
-	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[8]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:numTime[4][2]/I:sigTime[4][2]/I");
+	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:numTime[4][2]/I:sigTime[4][2]/I");
 	tAna->Branch("pid", &pid, "tof/D:beta/D:gamma/D:Z/D:dZ/D:AoQ/D:Q/D:ZmQ/D:ZImQ/D:A/D:Araw/D:Am2Q/D:Am3Q/D:Am2Z/D:Am3Z/D:dAm2Z/D:dAm3Z/D:Zi/I");
-
+	
 	ostringstream ssRun;
 	for(runNum=runMin; runNum<=runMax; runNum++)
 	{
@@ -239,7 +239,7 @@ void Root2Ana()
 				gr[i]=new TGraphErrors(nData, lowGain, highGain, errCh, errCh);
 				// gr[i]->Draw("AP");
 				// gr[i]->SetTitle(("high"+to_string(i)+"_vs_low"+to_string(iLow[i])).c_str());
-				TFitResultPtr fitRes=gr[i]->Fit("pol1","FSQ");
+				TFitResultPtr fitRes=gr[i]->Fit("pol1","SQ");
 				int fitSt=fitRes;
 				if(fitSt!=0&&fitSt!=4000)
 					continue;
@@ -304,29 +304,26 @@ void Root2Ana()
 				for(i=0; i<8; i++)
 					if(mqdcTOF.data[2*i+1]>QdcTofLow[i]&&mqdcTOF.data[2*i+1]<QdcUp)
 					{
+						j=i-i/4*4;
 						nQdcTof[i/4]++;
-						ana.egyPMT[i]=mqdcTOF.data[2*i+1]+r.Uniform(-0.5,0.5)-QdcTofLow[i];
+						ana.egyPMT[i/4][j]=mqdcTOF.data[2*i+1]+r.Uniform(-0.5,0.5)-QdcTofLow[i];
 					}
 				if(nQdcTof[0]==4)
 				{
-					// ana.xPlaQ[2]=log(ana.egyPMT[0]*ana.egyPMT[1]/ana.egyPMT[2]/ana.egyPMT[3]);
-					// ana.yPlaQ[2]=log(ana.egyPMT[1]*ana.egyPMT[2]/ana.egyPMT[0]/ana.egyPMT[3]);
+					// ana.xPlaQ[2]=log(ana.egyPMT[0][0]*ana.egyPMT[0][1]/ana.egyPMT[0][2]/ana.egyPMT[0][3]);
+					// ana.yPlaQ[2]=log(ana.egyPMT[0][1]*ana.egyPMT[0][2]/ana.egyPMT[0][0]/ana.egyPMT[0][3]);
 					
-					ana.xPlaQ[0]=log(ana.egyPMT[1]/ana.egyPMT[3]);
-					ana.yPlaQ[0]=log(ana.egyPMT[2]/ana.egyPMT[0]);
+					ana.xPlaQ[0]=log(ana.egyPMT[0][1]/ana.egyPMT[0][3]);
+					ana.yPlaQ[0]=log(ana.egyPMT[0][2]/ana.egyPMT[0][0]);
+					ana.egyPla[0]=(ana.egyPMT[0][0]+ana.egyPMT[0][1]+ana.egyPMT[0][2]+ana.egyPMT[0][3])/4;
 				}
 				if(nQdcTof[1]==4)
-				{
-					// ana.xPlaQ[1]=log(ana.egyPMT[5]*ana.egyPMT[6]/ana.egyPMT[4]/ana.egyPMT[7]);
-					// ana.yPlaQ[1]=log(ana.egyPMT[4]*ana.egyPMT[5]/ana.egyPMT[6]/ana.egyPMT[7]);
-					
-					ana.xPlaQ[1]=log(ana.egyPMT[5]/ana.egyPMT[4]);
-					ana.yPlaQ[1]=log(ana.egyPMT[7]/ana.egyPMT[6]);
+				{					
+					ana.xPlaQ[1]=log(ana.egyPMT[1][1]/ana.egyPMT[1][3]);
+					ana.yPlaQ[1]=log(ana.egyPMT[1][0]/ana.egyPMT[1][2]);
+					ana.egyPla[1]=(ana.egyPMT[1][0]+ana.egyPMT[1][1]+ana.egyPMT[1][2]+ana.egyPMT[1][3])/4;
 				}
-					
-				ana.egyPla[0]=(ana.egyPMT[0]+ana.egyPMT[1]+ana.egyPMT[2]+ana.egyPMT[3])/4;
-				ana.egyPla[1]=(ana.egyPMT[4]+ana.egyPMT[5]+ana.egyPMT[6]+ana.egyPMT[7])/4;
-				
+
 				ana.tke=CALTKE[0];
 				nGoodPin=0;
 				memset(goodPin, 0, sizeof(goodPin));
@@ -339,14 +336,14 @@ void Root2Ana()
 						ana.delE[i]=CALPIN[i][0]+CALPIN[i][1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
 						ana.tke+=CALTKE[i+1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
 					}
-				if(nGoodPin>=3&&goodPin[0]&&goodPin[1]&&goodPin[2])
+				if(nGoodPin>1&&goodPin[0])
 				{
 					memset(calQdcMcp, 0, sizeof(calQdcMcp));
 					memset(nGoodMcp, 0, sizeof(nGoodMcp));
 					if(runNum>=270)
 					{
 						for(i=0; i<4; i++)
-						{
+						{							
 							if(mqdcMCP.data[i]>QdcMcpLow[i]&&mqdcMCP.data[i]<QdcUp)
 							{
 								nGoodMcp[0]++;
@@ -358,9 +355,10 @@ void Root2Ana()
 							m=iLow[i];
 							if(mqdcMCP.data[i]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow[m]&&mqdcMCP.data[m]<QdcUp)
 							{
+								
 								calQdcMcp[1][i]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m]+r.Uniform(-0.5,0.5));
 								if(calQdcMcp[1][i]>QdcUp-QdcMcpLow[i])
-									nGoodMcp[1]++;	
+									nGoodMcp[1]++;
 							}
 						}
 						
@@ -433,7 +431,7 @@ void Root2Ana()
 								ana.tof[1]/=ana.numTime[1][0];
 						}
 						
-						if(iAna>=2)
+						if(iAna==2)
 						{
 							for(j=0; j<8; j++)
 							{
@@ -442,22 +440,20 @@ void Root2Ana()
 									k=j+1;
 									p=j;
 								}
-								else
+								if(iAna==3)
 								{
 									k=2*j+17;
 									p=j+8;
 								}
 								n=j/4;
-					
 								if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p])
 								{
 									ana.numTime[iAna][n]++;
 									ana.sigTime[iAna][n]=10*ana.numTime[iAna][n]+(j+1);
 									tPMT[j]=CALTDC*(mtdc.data[k]+r.Uniform(-0.5, 0.5));
-									timeDet[k]+=tPMT[j];
+									timeDet[n]+=tPMT[j];
 								}
 							}
-							
 							for(i=0; i<7; i++)
 								for(j=i+1; j<8; j++)
 									if(abs(tPMT[i])>0&&abs(tPMT[j])>0)
@@ -473,19 +469,19 @@ void Root2Ana()
 						{
 							ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
 							
-							if(ana.numTime[iAna][0]==4)
+							if(iAna!=1&&ana.numTime[iAna][0]==4)
 							{
 								// ana.xPlaT[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1]);
 								// ana.yPlaT[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2]);	
 								ana.xPlaT[iAna][0]=(tPMT[3]-tPMT[1]);
 								ana.yPlaT[iAna][0]=(tPMT[0]-tPMT[2]);
 							}
-							if(ana.numTime[iAna][1]==4)
+							if(iAna!=1&&ana.numTime[iAna][1]==4)
 							{
 								// ana.xPlaT[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6]);
-								// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5]);	
-								ana.xPlaT[iAna][1]=(tPMT[4]-tPMT[5]);
-								ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[7]);
+								// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5]);
+								ana.xPlaT[iAna][1]=(tPMT[7]-tPMT[5]);
+								ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[4]);
 							}
 
 							b=LOF/ana.tof[iAna]/0.299792458;
@@ -524,38 +520,38 @@ void Root2Ana()
 						}
 					}
 					
-					if(nGoodEvt>1) //standard condition  //begin to fill branch of pid						
-						if(ana.numTime[2][0]==4&&ana.numTime[2][1]==4&&((nGoodMcp[1]==4&&nQdcTof[0]==4&&nQdcTof[1]==4)||runNum==150||runNum==152||runNum==153))
+					if(nGoodEvt>1&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4&&(runNum==150||runNum==152||runNum==153||(nGoodMcp[1]==4&&nQdcTof[0]==4&&nQdcTof[1]==4))) //standard condition  //begin to fill branch of pid						
+					{
+						pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*(ana.tD[2][4][0]+ana.tD[2][5][1]+ana.tD[2][6][2]+ana.tD[2][7][3])/4;
+						
+						b=LOF/pid.tof/0.299792458;
+						if(b>0&&b<1)
 						{
-							pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*(ana.tD[2][4][0]+ana.tD[2][5][1]+ana.tD[2][6][2]+ana.tD[2][7][3])/4;
-							
-							b=LOF/pid.tof/0.299792458;
-							if(b>0&&b<1)
-							{
-								pid.beta=b;
-								pid.gamma=1/sqrt(1-b*b);
+							pid.beta=b;
+							pid.gamma=1/sqrt(1-b*b);
 
-								pid.Z=sqrt( ana.delE[0]/ (log(5930/(1/b/b-1))/b/b-1) );
-								pid.Z=CALZ_PID[0]+CALZ_PID[1]*pid.Z;
-								pid.Zi=TMath::Nint(pid.Z);
-								pid.dZ=pid.Z-pid.Zi;
-								pid.AoQ=ana.brho[1]/pid.beta/pid.gamma*0.32184;
-								pid.Q=ana.tke/(931.4940954*(pid.gamma-1)*pid.AoQ);
-								pid.ZmQ=pid.Z-pid.Q;
-								pid.ZImQ=pid.Zi-pid.Q;
-								pid.A=pid.AoQ*pid.Q;
-								pid.Araw=pid.AoQ*pid.Z;
-								pid.Am2Q=pid.A-2*pid.Q;
-								pid.Am3Q=pid.A-3*pid.Q;
-								pid.Am2Z=(pid.Q-2)*pid.Zi;
-								pid.Am3Z=(pid.Q-3)*pid.Zi;
-								pid.dAm2Z=pid.Am2Z-TMath::Nint(pid.Am2Z);
-								pid.dAm3Z=pid.Am3Z-TMath::Nint(pid.Am3Z);
-								if(pid.Am3Z<0)
-									pid.dAm3Z+=1;
-								tAna->Fill();
-							}
+							pid.Z=sqrt( ana.delE[0]/ (log(5930/(1/b/b-1))/b/b-1) );
+							pid.Z=CALZ_PID[0]+CALZ_PID[1]*pid.Z;
+							pid.Zi=TMath::Nint(pid.Z);
+							pid.dZ=pid.Z-pid.Zi;
+							pid.AoQ=ana.brho[1]/pid.beta/pid.gamma*0.32184;
+							pid.Q=ana.tke/(931.4940954*(pid.gamma-1)*pid.AoQ);
+							pid.ZmQ=pid.Z-pid.Q;
+							pid.ZImQ=pid.Zi-pid.Q;
+							pid.A=pid.AoQ*pid.Q;
+							pid.Araw=pid.AoQ*pid.Z;
+							pid.Am2Q=pid.A-2*pid.Q;
+							pid.Am3Q=pid.A-3*pid.Q;
+							pid.Am2Z=(pid.Q-2)*pid.Zi;
+							pid.Am3Z=(pid.Q-3)*pid.Zi;
+							pid.dAm2Z=pid.Am2Z-TMath::Nint(pid.Am2Z);
+							pid.dAm3Z=pid.Am3Z-TMath::Nint(pid.Am3Z);
+							if(pid.Am3Z<0)
+								pid.dAm3Z+=1;
+							tAna->Fill();
+							// cout<<"yes"<<endl;
 						}
+					}
 				}
 			}
 		}//end of whole tree
@@ -567,6 +563,7 @@ void Root2Ana()
 	fAna->Close();
 	delete fAna;
 }//end of whole function
+
 
 void StandaloneApplication(int argc, char** argv)
 {
