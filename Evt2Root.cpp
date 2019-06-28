@@ -77,7 +77,7 @@ void Evt2Root()
 			}
 			TFile *fRoot = new TFile(sRoot.c_str(), "RECREATE");
 			TTree *tData = new TTree("tData", "tree of data");
-			tData->Branch("run", run, "run[2]/I");
+			tData->Branch("run", run, "run[2]/I");  //[0]: run number;  [1]: sub-number of evt
 			tData->Branch("madc", &madc, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
 			tData->Branch("mtdc", &mtdc, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
 			tData->Branch("mqdcTOF", &mqdcTOF, "modID/I:data[32]/I:modRes/I:modEC_TS/I");
@@ -328,7 +328,7 @@ void Evt2Root()
 							iCtrlCRDC=(evtWord>>15)&0x1;
 							if(iCtrlCRDC==1)
 							{
-								iCh=evtWord&0x1F;
+								iCh=evtWord&0x3F;
 								s800.crdcCath[iCRDC][0][iCh]=(evtWord>>6)&0x1FF;
 							}
 							if(iCtrlCRDC==0&&iCh!=-1)

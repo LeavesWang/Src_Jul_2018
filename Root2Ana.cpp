@@ -75,9 +75,11 @@ struct StrtAna
 	double Am3Z[4][2];
 	double dAm2Z[4][2];
 	double dAm3Z[4][2];
-	int Zi[4];
 	int numTime[4][2];
 	int sigTime[4][2];
+	int Zi[4];
+	int Am2Zi[4][2];
+	int Am3Zi[4][2];
 };
 
 struct StrtPid
@@ -100,6 +102,8 @@ struct StrtPid
 	double dAm2Z;
 	double dAm3Z;
 	int Zi;
+	int Am2Zi;
+	int Am3Zi;
 };
 
 const int AdcPinLow=10, AdcPinUp=4096;
@@ -113,7 +117,7 @@ const int QdcUp=3840;
 const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 const double CALTDC=3.90625; //ps/ch
 const double CALPIN[5][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-const double CALTKE[6]={-84.202133, 13.182114, -12.209759, 7.753987, 3.089718, 0};
+const double CALTKE[6]={81.071121, 1.071346, 0.662579, 3.013299, 2.826749, 0};
 
 const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
 const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
@@ -172,8 +176,8 @@ void Root2Ana()
 
 	tAna->Branch("setting", &setting);
 	tAna->Branch("run", &run, "run/I");
-	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:Zi[4]/I:numTime[4][2]/I:sigTime[4][2]/I");
-	tAna->Branch("pid", &pid, "tof/D:beta/D:gamma/D:Z/D:dZ/D:AoQ/D:Q/D:ZmQ/D:ZImQ/D:A/D:Araw/D:Am2Q/D:Am3Q/D:Am2Z/D:Am3Z/D:dAm2Z/D:dAm3Z/D:Zi/I");
+	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:numTime[4][2]/I:sigTime[4][2]/I:Zi[4]/I:Am2Zi[4][2]/I:Am3Zi[4][2]/I");
+	tAna->Branch("pid", &pid, "tof/D:beta/D:gamma/D:Z/D:dZ/D:AoQ/D:Q/D:ZmQ/D:ZImQ/D:A/D:Araw/D:Am2Q/D:Am3Q/D:Am2Z/D:Am3Z/D:dAm2Z/D:dAm3Z/D:Zi/I:Am2Zi/I:Am3Zi/I");
 	
 	ostringstream ssRun;
 	for(runNum=runMin; runNum<=runMax; runNum++)
@@ -343,7 +347,7 @@ void Root2Ana()
 					if(runNum>=270)
 					{
 						for(i=0; i<4; i++)
-						{							
+						{
 							if(mqdcMCP.data[i]>QdcMcpLow[i]&&mqdcMCP.data[i]<QdcUp)
 							{
 								nGoodMcp[0]++;
@@ -365,9 +369,6 @@ void Root2Ana()
 						for(i=0; i<2; i++)
 							if(nGoodMcp[i]==4)
 							{
-								xMcpRaw=0;
-								yMcpRaw=0;
-							
 								xMcpRaw=(calQdcMcp[i][0]+calQdcMcp[i][3]-calQdcMcp[i][1]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
 								
 								yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
@@ -504,15 +505,17 @@ void Root2Ana()
 										ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
 										ana.ZImQ[iAna][k]=ana.Zi[iAna]-ana.Q[iAna][k];
 										ana.A[iAna][k]=ana.AoQ[iAna][k]*ana.Q[iAna][k];
-										ana.Araw[iAna][k]=ana.AoQ[iAna][k]*ana.Z[iAna];
+										ana.Araw[iAna][k]=ana.AoQ[iAna][k]*ana.Zi[iAna];
 										ana.Am2Q[iAna][k]=ana.A[iAna][k]-2*ana.Q[iAna][k];
 										ana.Am3Q[iAna][k]=ana.A[iAna][k]-3*ana.Q[iAna][k];
-										ana.Am2Z[iAna][k]=(ana.Q[iAna][k]-2)*ana.Zi[iAna];
-										ana.Am3Z[iAna][k]=(ana.Q[iAna][k]-3)*ana.Zi[iAna];
-										ana.dAm2Z[iAna][k]=ana.Am2Z[iAna][k]-TMath::Nint(ana.Am2Z[iAna][k]);
-										ana.dAm3Z[iAna][k]=ana.Am3Z[iAna][k]-TMath::Nint(ana.Am3Z[iAna][k]);
-										if(ana.Am3Z[iAna][k]<0)
-											ana.dAm3Z[iAna][k]+=1;
+										ana.Am2Z[iAna][k]=ana.Araw[iAna][k]-2*ana.Zi[iAna];
+										ana.Am3Z[iAna][k]=ana.Araw[iAna][k]-3*ana.Zi[iAna];
+										ana.Am2Zi[iAna][k]=TMath::Nint(ana.Am2Z[iAna][k]);
+										ana.Am3Zi[iAna][k]=TMath::Nint(ana.Am3Z[iAna][k]);
+										ana.dAm2Z[iAna][k]=ana.Am2Z[iAna][k]-ana.Am2Zi[iAna][k];
+										ana.dAm3Z[iAna][k]=ana.Am3Z[iAna][k]-ana.Am3Zi[iAna][k];
+										// if(ana.Am3Z[iAna][k]<0)
+											// ana.dAm3Z[iAna][k]+=1;
 									}
 									nGoodEvt++;
 								}
@@ -539,15 +542,17 @@ void Root2Ana()
 							pid.ZmQ=pid.Z-pid.Q;
 							pid.ZImQ=pid.Zi-pid.Q;
 							pid.A=pid.AoQ*pid.Q;
-							pid.Araw=pid.AoQ*pid.Z;
+							pid.Araw=pid.AoQ*pid.Zi;
 							pid.Am2Q=pid.A-2*pid.Q;
 							pid.Am3Q=pid.A-3*pid.Q;
-							pid.Am2Z=(pid.Q-2)*pid.Zi;
-							pid.Am3Z=(pid.Q-3)*pid.Zi;
-							pid.dAm2Z=pid.Am2Z-TMath::Nint(pid.Am2Z);
-							pid.dAm3Z=pid.Am3Z-TMath::Nint(pid.Am3Z);
-							if(pid.Am3Z<0)
-								pid.dAm3Z+=1;
+							pid.Am2Z=pid.Araw-2*pid.Zi;
+							pid.Am3Z=pid.Araw-3*pid.Zi;
+							pid.Am2Zi=TMath::Nint(pid.Am2Z);
+							pid.Am3Zi=TMath::Nint(pid.Am3Z);
+							pid.dAm2Z=pid.Am2Z-pid.Am2Zi;
+							pid.dAm3Z=pid.Am3Z-pid.Am3Zi;
+							// if(pid.Am3Z<0)
+								// pid.dAm3Z+=1;
 							tAna->Fill();
 							// cout<<"yes"<<endl;
 						}
