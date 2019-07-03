@@ -63,7 +63,8 @@ void Evt2Root()
 			ssIEvt.str("");
 			ssIEvt<<setw(2)<<setfill('0')<<iEvt;
 			
-			sEvt="/disk2/e12022/data/experiment/run"+ssRun1.str()+"/run-"+ssRun2.str()+"-"+ssIEvt.str()+".evt";
+			// sEvt="/disk2/e12022/data/experiment/run"+ssRun1.str()+"/run-"+ssRun2.str()+"-"+ssIEvt.str()+".evt";
+			sEvt="/home/kailong/ExpData/Jul2018/EvtData/run"+ssRun1.str()+"/run-"+ssRun2.str()+"-"+ssIEvt.str()+".evt";
 			if(access("/home/kailong/ExpData/Jul2018/RootData", F_OK)!=0)
 				system("mkdir /home/kailong/ExpData/Jul2018/RootData");
 			sRoot="/home/kailong/ExpData/Jul2018/RootData/run-"+ssRun2.str()+"-"+ssIEvt.str()+".root";
