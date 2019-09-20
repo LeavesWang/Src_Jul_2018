@@ -19,6 +19,7 @@
 #include "TFitResultPtr.h"
 #include "TFitResult.h"
 #include "TStyle.h"
+#include "TH1S.h"
 
 using namespace std;
 
@@ -80,6 +81,10 @@ struct StrtAna
 	int Zi[4];
 	int Am2Zi[4][2];
 	int Am3Zi[4][2];
+	double xCrdc[2][2];  //first [2]: two CRDCs; section [2]: [0] is from gravity center; [1] is from Gaussian fit
+	double yCrdc[2];  //y is only considered from electron's drift time
+	double egyHodo[32];
+	int dTsHodoSi;
 };
 
 struct StrtPid
@@ -139,6 +144,73 @@ const string sSet[2]={"PS_270_382", "RS_270_382"};
 
 void Root2Ana()
 {	
+	double tDifRang[8][8][3][3]={0};  //first [3]: [0] mean middle peak; [1] means left peak; [2] means right peak.  second [3]: [0] mean shift valus; [1] means lower limit of the peak; [2] means upper limit of the peak
+	tDifRang[0][4][0][1]=92020;  tDifRang[0][4][0][2]=92330;
+	tDifRang[0][4][2][1]=137590;  tDifRang[0][4][2][2]=137810;  tDifRang[0][4][2][0]=45519;
+	tDifRang[0][5][1][1]=46740;  tDifRang[0][5][1][2]=47000;  tDifRang[0][5][1][0]=-45463;
+	tDifRang[0][5][0][1]=92190;  tDifRang[0][5][0][2]=92520;
+	tDifRang[0][5][2][1]=137750;  tDifRang[0][5][2][2]=137930;  tDifRang[0][5][2][0]=45502;
+	tDifRang[0][6][0][1]=92370;  tDifRang[0][6][0][2]=92620;
+	tDifRang[0][6][2][1]=137860;  tDifRang[0][6][2][2]=138090;  tDifRang[0][6][2][0]=45489;
+	tDifRang[0][7][0][1]=92630;  tDifRang[0][7][0][2]=92880;
+	tDifRang[0][7][2][1]=138110;  tDifRang[0][7][2][2]=138320;  tDifRang[0][7][2][0]=45474;
+	
+	tDifRang[1][4][0][1]=91110;  tDifRang[1][4][0][2]=91400;
+	tDifRang[1][4][2][1]=136690;  tDifRang[1][4][2][2]=136890;  tDifRang[1][4][2][0]=45534;
+	tDifRang[1][5][1][1]=45810;  tDifRang[1][5][1][2]=46070;  tDifRang[1][5][1][0]=-45477;
+	tDifRang[1][5][0][1]=91290;  tDifRang[1][5][0][2]=91600;
+	tDifRang[1][5][2][1]=136850;  tDifRang[1][5][2][2]=137010;  tDifRang[1][5][2][0]=45513;
+	tDifRang[1][6][0][1]=91450;  tDifRang[1][6][0][2]=91690;
+	tDifRang[1][6][2][1]=136950;  tDifRang[1][6][2][2]=137160;  tDifRang[1][6][2][0]=45503;
+	tDifRang[1][7][0][1]=91700;  tDifRang[1][7][0][2]=91950;
+	tDifRang[1][7][2][1]=137200;  tDifRang[1][7][2][2]=137400;  tDifRang[1][7][2][0]=45488;
+	
+	tDifRang[2][4][0][1]=91270;  tDifRang[2][4][0][2]=91550;
+	tDifRang[2][4][2][1]=136830;  tDifRang[2][4][2][2]=137040;  tDifRang[2][4][2][0]=45527;
+	tDifRang[2][5][1][1]=45960;  tDifRang[2][5][1][2]=46220;  tDifRang[2][5][1][0]=-45469;
+	tDifRang[2][5][0][1]=91430;  tDifRang[2][5][0][2]=91750;
+	tDifRang[2][5][2][1]=136990;  tDifRang[2][5][2][2]=137160;  tDifRang[2][5][2][0]=45509;
+	tDifRang[2][6][0][1]=91600;  tDifRang[2][6][0][2]=91830;
+	tDifRang[2][6][2][1]=137100;  tDifRang[2][6][2][2]=137300;  tDifRang[2][6][2][0]=45496;
+	tDifRang[2][7][0][1]=91850;  tDifRang[2][7][0][2]=92100;
+	tDifRang[2][7][2][1]=137340;  tDifRang[2][7][2][2]=137550;  tDifRang[2][7][2][0]=45482;
+	
+	tDifRang[3][4][0][1]=90120;  tDifRang[3][4][0][2]=90420;
+	tDifRang[3][4][2][1]=135700;  tDifRang[3][4][2][2]=135920;  tDifRang[3][4][2][0]=45541;
+	tDifRang[3][5][1][1]=44800;  tDifRang[3][5][1][2]=45080;  tDifRang[3][5][1][0]=-45486;
+	tDifRang[3][5][0][1]=90310;  tDifRang[3][5][0][2]=90630;
+	tDifRang[3][5][2][1]=135870;  tDifRang[3][5][2][2]=136050;  tDifRang[3][5][2][2]=45523;
+	tDifRang[3][6][0][1]=90450;  tDifRang[3][6][0][2]=90710;
+	tDifRang[3][6][2][1]=135970;  tDifRang[3][6][2][2]=136180;  tDifRang[3][6][2][2]=45512;
+	tDifRang[3][7][0][1]=90690;  tDifRang[3][7][0][2]=90980;
+	tDifRang[3][7][2][1]=136220;  tDifRang[3][7][2][2]=136430;  tDifRang[3][7][2][2]=45497;
+	
+	tDifRang[4][5][0][1]=-45540;  tDifRang[4][5][0][2]=-45120;
+	tDifRang[4][5][2][1]=40;  tDifRang[4][5][2][2]=340;  tDifRang[4][5][2][0]=45534;
+	
+	tDifRang[5][6][0][1]=45400;  tDifRang[5][6][0][2]=45800;
+	tDifRang[5][6][1][1]=-30;  tDifRang[5][6][1][2]=220;  tDifRang[5][6][1][0]=-45524;
+	
+	tDifRang[5][7][0][1]=45690;  tDifRang[5][7][0][2]=45690;
+	tDifRang[5][7][1][1]=240;  tDifRang[5][7][1][2]=500;  tDifRang[5][7][1][0]=-45512;
+	
+	double calHodo[32][2]={0};
+	int nH=0;
+	string strRead;
+	ifstream fCalHodo("fCalHodo.dat");
+	while(!fCalHodo()&&fCalHodo.peek()!=EOF)
+	{
+		if(fCalHodo.peek()!='#')
+		{
+			fCalHodo>>calHodo[nH][1]>>calHodo[nH][0];
+			getline(fCalHodo, strRead);
+			nH++;
+		}
+		else
+			getline(fCalHodo, strRead);
+	}
+	fCalHodo.close();
+	
 	gStyle->SetOptStat("nemri");
 	gStyle->SetPadGridX(1);
 	gStyle->SetPadGridY(1);
@@ -156,6 +228,7 @@ void Root2Ana()
 	double calQdcMcp[2][4];
 	
 	long long iEnt, nEnt;
+	unsigned long long tsSi=0, tsHodo=0;
 	int i, j, k, m, n, p;
 	int iAna;
 	int nQdcTof[2];
@@ -176,7 +249,7 @@ void Root2Ana()
 
 	tAna->Branch("setting", &setting);
 	tAna->Branch("run", &run, "run/I");
-	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:numTime[4][2]/I:sigTime[4][2]/I:Zi[4]/I:Am2Zi[4][2]/I:Am3Zi[4][2]/I");
+	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:numTime[4][2]/I:sigTime[4][2]/I:Zi[4]/I:Am2Zi[4][2]/I:Am3Zi[4][2]/I:xCrdc[2][2]/D:yCrdc[2]/D");
 	tAna->Branch("pid", &pid, "tof/D:beta/D:gamma/D:Z/D:dZ/D:AoQ/D:Q/D:ZmQ/D:ZImQ/D:A/D:Araw/D:Am2Q/D:Am3Q/D:Am2Z/D:Am3Z/D:dAm2Z/D:dAm3Z/D:Zi/I:Am2Zi/I:Am3Zi/I");
 	
 	ostringstream ssRun;
@@ -304,6 +377,40 @@ void Root2Ana()
 				memset(&ana, 0, sizeof(ana));
 				memset(&pid, 0, sizeof(pid));
 				
+				tsHodo=s800.tS;
+				for(m=0; m<32; m++)
+					if(s800.hodoEgy[m]>10&&s800.hodoEgy[m]<3000&&s800.hodoTime>50&&s800.hodoTime<2200)
+						ana.egyHodo[m]=calHodo[0]+calHodo[1]*(s800.hodoEgy[m]+r.Uniform(-0.5,0.5));
+				
+				for(m=0; m<2; m++)
+					if(s800.crdcAnode[m][0]>0&&s800.crdcAnode[m][1]>0)
+					{
+						//calculate y from the drift time to anode
+						ana.yCrdc[m]=s800.crdcAnode[m][1];
+						
+						TH1S hx("hx","hx",256,0,256);
+						for(i=1; i<=4; i++)
+							for(j=0; j<64; j++)
+							{
+								if(s800.crdcCath[m][i][j]>0)
+								{
+									k=(i-1)*64+j;
+									hx.Fill(k, s800.crdcCath[m][i][j]);
+								}
+							}
+						if(hx.GetEntries()>0)
+						{
+							//calculate x from gravity center
+							ana.xCrdc[m][0]=hx.GetMean();
+							//calculate x from Gaussian fit
+							TFitResultPtr fitX=hx.Fit("gaus","S0Q");
+							int fitSt=fitX;
+							if(fitSt!=0 && fitX->Parameter(1)>0 && fitX->Parameter(1)<256)
+								ana.xCrdc[m][1]=fitX->Parameter(1);
+						}
+					}
+				
+					
 				memset(nQdcTof, 0, sizeof(nQdcTof));
 				for(i=0; i<8; i++)
 					if(mqdcTOF.data[2*i+1]>QdcTofLow[i]&&mqdcTOF.data[2*i+1]<QdcUp)
@@ -396,8 +503,8 @@ void Root2Ana()
 								{
 									ana.numTime[0][k]++;
 									ana.sigTime[0][k]=10*ana.numTime[0][k]+(i+1);
-									tPMT[i]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5,0.5));
-									timeDet[k]+=tPMT[i];
+									tPMT[i]=CALADC[i]*(-madc.data[i]+r.Uniform(-0.5,0.5));
+									// timeDet[k]+=tPMT[i];
 								}
 							}
 							for(i=0; i<7; i++)
@@ -407,8 +514,8 @@ void Root2Ana()
 										ana.tD[0][i][j]=tPMT[i]-tPMT[j];
 										ana.tD[0][j][i]=-ana.tD[0][i][j];
 									}
-							if(ana.numTime[0][0]>0&&ana.numTime[0][1]>0)
-								ana.tof[0]=timeDet[1]/ana.numTime[0][0]-timeDet[0]/ana.numTime[0][1];
+							// if(ana.numTime[0][0]>0&&ana.numTime[0][1]>0)
+								// ana.tof[0]=timeDet[1]/ana.numTime[0][0]-timeDet[0]/ana.numTime[0][1];
 						}
 						
 						if(iAna==1) //For TAC+ADC
@@ -428,11 +535,11 @@ void Root2Ana()
 									ana.tof[1]+=ana.tD[1][p][m];
 								}
 							}
-							if(ana.numTime[1][0]>0)
+							if(ana.numTime[1][0]==4)
 								ana.tof[1]/=ana.numTime[1][0];
 						}
 						
-						if(iAna==2)
+						if(iAna>=2)
 						{
 							for(j=0; j<8; j++)
 							{
@@ -462,27 +569,56 @@ void Root2Ana()
 										ana.tD[iAna][i][j]=tPMT[i]-tPMT[j];
 										ana.tD[iAna][j][i]=-ana.tD[iAna][i][j];
 									}
-							if(ana.numTime[iAna][0]>0&&ana.numTime[iAna][1]>0)
+							if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
 								ana.tof[iAna]=timeDet[1]/ana.numTime[iAna][1]-timeDet[0]/ana.numTime[iAna][0];
 						}
-						
-						if(ana.numTime[iAna][0]>0&&ana.numTime[iAna][1]>0)
+					}
+					
+					if(ana.numTime[0][0]==4&&ana.numTime[0][1]==4&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4)
+					{
+						for(i=0; i<7; i++)
+							for(j=i+1; j<8; j++)
+								for(k=0; k<3; k++)
+									if(abs(tDifRang[i][j][k][1])>0&&abs(tDifRang[i][j][k][2])>0)
+										if(ana.tD[0][i][j]-ana.tD[2][i][j]>tDifRang[i][j][k][1]&&ana.tD[0][i][j]-ana.tD[2][i][j]<tDifRang[i][j][k][2])
+										{
+											ana.tD[0][i][j]-=tDifRang[i][j][k][0];
+											ana.tD[0][j][i]=-ana.tD[0][i][j];
+										}
+						ana.tof[0]=0;
+						k=0;
+						for(i=0; i<4; i++)
+							for(j=4; j<8; j++)
+							{
+								ana.tof[0]+=ana.tD[0][j][i];
+								k++;
+							}
+						ana.tof[0]/=k;
+					}
+					
+					for(iAna=0; iAna<4; iAna++)
+					{						
+						if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
 						{
 							ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
 							
 							if(iAna!=1&&ana.numTime[iAna][0]==4)
 							{
-								// ana.xPlaT[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1]);
-								// ana.yPlaT[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2]);	
-								ana.xPlaT[iAna][0]=(tPMT[3]-tPMT[1]);
-								ana.yPlaT[iAna][0]=(tPMT[0]-tPMT[2]);
+								ana.xPlaT[iAna][0]=(ana.tD[iAna][2][0]+ana.tD[iAna][3][1]+ana.tD[iAna][2][1]+ana.tD[iAna][3][0])/4;
+								ana.xPlaT[iAna][0]=(ana.tD[iAna][0][2]+ana.tD[iAna][3][1]+ana.tD[iAna][0][1]+ana.tD[iAna][3][2])/4;	
+								// ana.xPlaT[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1])/2;
+								// ana.yPlaT[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2])/2;	
+								// ana.xPlaT[iAna][0]=(tPMT[3]-tPMT[1]);
+								// ana.yPlaT[iAna][0]=(tPMT[0]-tPMT[2]);
 							}
 							if(iAna!=1&&ana.numTime[iAna][1]==4)
 							{
-								// ana.xPlaT[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6]);
-								// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5]);
-								ana.xPlaT[iAna][1]=(tPMT[7]-tPMT[5]);
-								ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[4]);
+								ana.xPlaT[iAna][1]=(ana.tD[iAna][4][6]+ana.tD[iAna][7][5]+ana.tD[iAna][4][5]+ana.tD[iAna][7][6])/4;
+								ana.xPlaT[iAna][1]=(ana.tD[iAna][6][4]+ana.tD[iAna][7][5]+ana.tD[iAna][6][5]+ana.tD[iAna][7][4])/4;
+								// ana.xPlaT[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6])/2;
+								// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5])/2;
+								// ana.xPlaT[iAna][1]=(tPMT[7]-tPMT[5]);
+								// ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[4]);
 							}
 
 							b=LOF/ana.tof[iAna]/0.299792458;
@@ -554,7 +690,6 @@ void Root2Ana()
 							// if(pid.Am3Z<0)
 								// pid.dAm3Z+=1;
 							tAna->Fill();
-							// cout<<"yes"<<endl;
 						}
 					}
 				}

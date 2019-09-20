@@ -25,7 +25,7 @@ struct StrtS800
 {
 	int tS;
 	int eC;
-	int trig;
+	int trig;  // =1: Coincidence (usual case); =16: Secondary (MCP provides)
 	int tof[8]; //[0]-->[1]: ORTEC TAC+Phillips ADC; [2]-->[7]: Phillips TDC
 	int crdcCath[2][5][64]; //[2]: two CRDC; [5]: [0]---sample; [1]-->[4]---energy
 	int crdcAnode[2][2]; // [0]: energy; [1]: time	
@@ -297,7 +297,6 @@ void Evt2Root()
 						iCh=(evtWord>>12)&0xF;
 						s800.tof[iCh-4]=evtWord&0xFFF;
 						// cout<<"s800.tof[iCh-4]="<<s800.tof[iCh-4]<<endl;
-						
 					}
 					
 					nWords=*pBuf | *(pBuf+1)<<8;
@@ -336,7 +335,7 @@ void Evt2Root()
 							{
 								iConnect=1+((evtWord>>10)&0x3);
 								s800.crdcCath[iCRDC][iConnect][iCh]=evtWord&0x3FF;
-							}	
+							}
 						}
 						
 						pBuf+=4; //skip the head of CRDC Anode sub-packet
