@@ -83,8 +83,8 @@ struct StrtAna
 	int Am3Zi[4][2];
 	double xCrdc[2][2];  //first [2]: two CRDCs; section [2]: [0] is from gravity center; [1] is from Gaussian fit
 	double yCrdc[2];  //y is only considered from electron's drift time
+	int mulHodo;
 	double egyHodo[32];
-	int dTsHodoSi;
 };
 
 struct StrtPid
@@ -122,7 +122,7 @@ const int QdcUp=3840;
 const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 const double CALTDC=3.90625; //ps/ch
 const double CALPIN[5][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-const double CALTKE[6]={81.071121, 1.071346, 0.662579, 3.013299, 2.826749, 0};
+const double CALTKE[6]={81.071121, 1.071346, 0.662579, 3.013299, 2.826749, 0};  //unit: MeV/ch
 
 const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
 const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
@@ -144,7 +144,7 @@ const string sSet[2]={"PS_270_382", "RS_270_382"};
 
 void Root2Ana()
 {	
-	double tDifRang[8][8][3][3]={0};  //first [3]: [0] mean middle peak; [1] means left peak; [2] means right peak.  second [3]: [0] mean shift valus; [1] means lower limit of the peak; [2] means upper limit of the peak
+	double tDifRang[8][8][3][3]={0};  //first [3]: [0] mean middle peak; [1] means left peak; [2] means right peak.  second [3]: [0] mean shift value; [1] means lower limit of the peak; [2] means upper limit of the peak
 	tDifRang[0][4][0][1]=92020;  tDifRang[0][4][0][2]=92330;
 	tDifRang[0][4][2][1]=137590;  tDifRang[0][4][2][2]=137810;  tDifRang[0][4][2][0]=45519;
 	tDifRang[0][5][1][1]=46740;  tDifRang[0][5][1][2]=47000;  tDifRang[0][5][1][0]=-45463;
@@ -179,11 +179,11 @@ void Root2Ana()
 	tDifRang[3][4][2][1]=135700;  tDifRang[3][4][2][2]=135920;  tDifRang[3][4][2][0]=45541;
 	tDifRang[3][5][1][1]=44800;  tDifRang[3][5][1][2]=45080;  tDifRang[3][5][1][0]=-45486;
 	tDifRang[3][5][0][1]=90310;  tDifRang[3][5][0][2]=90630;
-	tDifRang[3][5][2][1]=135870;  tDifRang[3][5][2][2]=136050;  tDifRang[3][5][2][2]=45523;
+	tDifRang[3][5][2][1]=135870;  tDifRang[3][5][2][2]=136050;  tDifRang[3][5][2][0]=45523;
 	tDifRang[3][6][0][1]=90450;  tDifRang[3][6][0][2]=90710;
-	tDifRang[3][6][2][1]=135970;  tDifRang[3][6][2][2]=136180;  tDifRang[3][6][2][2]=45512;
+	tDifRang[3][6][2][1]=135970;  tDifRang[3][6][2][2]=136180;  tDifRang[3][6][2][0]=45512;
 	tDifRang[3][7][0][1]=90690;  tDifRang[3][7][0][2]=90980;
-	tDifRang[3][7][2][1]=136220;  tDifRang[3][7][2][2]=136430;  tDifRang[3][7][2][2]=45497;
+	tDifRang[3][7][2][1]=136220;  tDifRang[3][7][2][2]=136430;  tDifRang[3][7][2][0]=45497;
 	
 	tDifRang[4][5][0][1]=-45540;  tDifRang[4][5][0][2]=-45120;
 	tDifRang[4][5][2][1]=40;  tDifRang[4][5][2][2]=340;  tDifRang[4][5][2][0]=45534;
@@ -198,7 +198,7 @@ void Root2Ana()
 	int nH=0;
 	string strRead;
 	ifstream fCalHodo("fCalHodo.dat");
-	while(!fCalHodo()&&fCalHodo.peek()!=EOF)
+	while(!fCalHodo.eof()&&fCalHodo.peek()!=EOF)
 	{
 		if(fCalHodo.peek()!='#')
 		{
@@ -227,34 +227,40 @@ void Root2Ana()
 	double tPMT[8], timeDet[2];
 	double calQdcMcp[2][4];
 	
-	long long iEnt, nEnt;
-	unsigned long long tsSi=0, tsHodo=0;
+	long long iEnt, nEnt, jEnt, lEnt, rEnt;
+	const int LjEnt=0, UjEnt=1;
+	int ts[UjEnt+LjEnt]={0};
+	int tsSi=0, tsHodo=0;
 	int i, j, k, m, n, p;
 	int iAna;
+	double eHodo[32];
+	int nHodo;
 	int nQdcTof[2];
 	int nGoodEvt, nGoodPin, nGoodMcp[2];
 	bool goodPin[5];
 	double b;
 	string setting;
 	int run;
+	double dTsHodoSi;
 	double xMcpRaw=0, yMcpRaw=0;
 		
 	int runMin, runMax, runNum;
 	cout<<"Input minimum and maximum numbers of run: ";
 	cin>>runMin>>runMax;
 	
-	sAna="/home/kailong/ExpData/Jul2018/AnaData/ana-run-"+to_string(runMin)+"--"+to_string(runMax)+".root";
-	TFile *fAna=new TFile(sAna.c_str(), "RECREATE");
-	TTree *tAna=new TTree("tAna", "tree for data analysis");
-
-	tAna->Branch("setting", &setting);
-	tAna->Branch("run", &run, "run/I");
-	tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:numTime[4][2]/I:sigTime[4][2]/I:Zi[4]/I:Am2Zi[4][2]/I:Am3Zi[4][2]/I:xCrdc[2][2]/D:yCrdc[2]/D");
-	tAna->Branch("pid", &pid, "tof/D:beta/D:gamma/D:Z/D:dZ/D:AoQ/D:Q/D:ZmQ/D:ZImQ/D:A/D:Araw/D:Am2Q/D:Am3Q/D:Am2Z/D:Am3Z/D:dAm2Z/D:dAm3Z/D:Zi/I:Am2Zi/I:Am3Zi/I");
-	
 	ostringstream ssRun;
 	for(runNum=runMin; runNum<=runMax; runNum++)
 	{
+		sAna="/home/kailong/ExpData/Jul2018/AnaData/ana-run-"+to_string(runNum)+".root";
+		TFile *fAna=new TFile(sAna.c_str(), "RECREATE");
+		TTree *tAna=new TTree("tAna", "tree for data analysis");
+
+		tAna->Branch("setting", &setting);
+		tAna->Branch("run", &run, "run/I");
+		// tAna->Branch("dTsHodoSi", &dTsHodoSi, "dTsHodoSi/D");
+		tAna->Branch("ana", &ana, "tof[4]/D:tD[4][8][8]/D:egyPMT[2][4]/D:egyPla[2]/D:xPlaT[4][2]/D:yPlaT[4][2]/D:xPlaQ[2]/D:yPlaQ[2]/D:xMCP[2]/D:yMCP[2]/D:delE[5]/D:tke/D:beta[4]/D:gamma[4]/D:Z[4]/D:dZ[4]/D:brho[2]/D:AoQ[4][2]/D:Q[4][2]/D:ZmQ[4][2]/D:ZImQ[4][2]/D:A[4][2]/D:Araw[4][2]/D:Am2Q[4][2]/D:Am3Q[4][2]/D:Am2Z[4][2]/D:Am3Z[4][2]/D:dAm2Z[4][2]/D:dAm3Z[4][2]/D:numTime[4][2]/I:sigTime[4][2]/I:Zi[4]/I:Am2Zi[4][2]/I:Am3Zi[4][2]/I:xCrdc[2][2]/D:yCrdc[2]/D:mulHodo/I:egyHodo[32]/D");
+		tAna->Branch("pid", &pid, "tof/D:beta/D:gamma/D:Z/D:dZ/D:AoQ/D:Q/D:ZmQ/D:ZImQ/D:A/D:Araw/D:Am2Q/D:Am3Q/D:Am2Z/D:Am3Z/D:dAm2Z/D:dAm3Z/D:Zi/I:Am2Zi/I:Am3Zi/I");
+			
 		run=runNum;
 		
 		ssRun.str("");
@@ -366,330 +372,379 @@ void Root2Ana()
 				setting="other_270_382";
 		}
 		
-		for(iEnt=0; iEnt<tData->GetEntries(); iEnt++)
+		nEnt=tData->GetEntries();
+		for(iEnt=0; iEnt<nEnt; iEnt++)
 		// for(iEnt=0; iEnt<1000; iEnt++)
 		{
 			tData->GetEntry(iEnt);
+			tsHodo=0;
 			if(s800.trig==1||s800.trig==16)
 			{
-				TRandom3 r(0);
-				
-				memset(&ana, 0, sizeof(ana));
-				memset(&pid, 0, sizeof(pid));
+				TRandom3 r1(0);
 				
 				tsHodo=s800.tS;
+				nHodo=0;
+				memset(eHodo, 0, sizeof(eHodo));
 				for(m=0; m<32; m++)
 					if(s800.hodoEgy[m]>10&&s800.hodoEgy[m]<3000&&s800.hodoTime>50&&s800.hodoTime<2200)
-						ana.egyHodo[m]=calHodo[0]+calHodo[1]*(s800.hodoEgy[m]+r.Uniform(-0.5,0.5));
-				
-				for(m=0; m<2; m++)
-					if(s800.crdcAnode[m][0]>0&&s800.crdcAnode[m][1]>0)
 					{
-						//calculate y from the drift time to anode
-						ana.yCrdc[m]=s800.crdcAnode[m][1];
-						
-						TH1S hx("hx","hx",256,0,256);
-						for(i=1; i<=4; i++)
-							for(j=0; j<64; j++)
-							{
-								if(s800.crdcCath[m][i][j]>0)
-								{
-									k=(i-1)*64+j;
-									hx.Fill(k, s800.crdcCath[m][i][j]);
-								}
-							}
-						if(hx.GetEntries()>0)
-						{
-							//calculate x from gravity center
-							ana.xCrdc[m][0]=hx.GetMean();
-							//calculate x from Gaussian fit
-							TFitResultPtr fitX=hx.Fit("gaus","S0Q");
-							int fitSt=fitX;
-							if(fitSt!=0 && fitX->Parameter(1)>0 && fitX->Parameter(1)<256)
-								ana.xCrdc[m][1]=fitX->Parameter(1);
-						}
+						nHodo++;
+						eHodo[m]=calHodo[m][0]+calHodo[m][1]*(s800.hodoEgy[m]+r1.Uniform(-0.5,0.5));
 					}
-				
-					
-				memset(nQdcTof, 0, sizeof(nQdcTof));
-				for(i=0; i<8; i++)
-					if(mqdcTOF.data[2*i+1]>QdcTofLow[i]&&mqdcTOF.data[2*i+1]<QdcUp)
+				// if(nHodo<2)
+					// continue;
+				memset(ts, 0, sizeof(ts));
+				n=0;
+				lEnt=(iEnt-LjEnt)>0?(iEnt-LjEnt):0;
+				rEnt=(iEnt+UjEnt)<nEnt?(iEnt+UjEnt):nEnt;
+				for(jEnt=lEnt; jEnt<rEnt; jEnt++)
+					if(s800.trig==1||s800.trig==16)
 					{
-						j=i-i/4*4;
-						nQdcTof[i/4]++;
-						ana.egyPMT[i/4][j]=mqdcTOF.data[2*i+1]+r.Uniform(-0.5,0.5)-QdcTofLow[i];
+						tData->GetEntry(jEnt);
+						if(s800.trig==1||s800.trig==16)
+							ts[n++]=s800.tS;
 					}
-				if(nQdcTof[0]==4)
+				bool goodTS=false;
+				for(j=0; j<n-1; j++)
 				{
-					// ana.xPlaQ[2]=log(ana.egyPMT[0][0]*ana.egyPMT[0][1]/ana.egyPMT[0][2]/ana.egyPMT[0][3]);
-					// ana.yPlaQ[2]=log(ana.egyPMT[0][1]*ana.egyPMT[0][2]/ana.egyPMT[0][0]/ana.egyPMT[0][3]);
+					goodTS=ts[j]<ts[j+1];
+					if(!goodTS)
+						break;
+				}
+				if(!goodTS)
+				{
+					lEnt=iEnt;
+					rEnt=iEnt+1;
+				}
 					
-					ana.xPlaQ[0]=log(ana.egyPMT[0][1]/ana.egyPMT[0][3]);
-					ana.yPlaQ[0]=log(ana.egyPMT[0][2]/ana.egyPMT[0][0]);
-					ana.egyPla[0]=(ana.egyPMT[0][0]+ana.egyPMT[0][1]+ana.egyPMT[0][2]+ana.egyPMT[0][3])/4;
-				}
-				if(nQdcTof[1]==4)
-				{					
-					ana.xPlaQ[1]=log(ana.egyPMT[1][1]/ana.egyPMT[1][3]);
-					ana.yPlaQ[1]=log(ana.egyPMT[1][0]/ana.egyPMT[1][2]);
-					ana.egyPla[1]=(ana.egyPMT[1][0]+ana.egyPMT[1][1]+ana.egyPMT[1][2]+ana.egyPMT[1][3])/4;
-				}
+				tsSi=0;
+				for(jEnt=lEnt; jEnt<rEnt; jEnt++)
+				{
+					tData->GetEntry(jEnt);
+					if(s800.trig!=1&&s800.trig!=16)
+						continue;
+					TRandom3 r(0);
+					
+					dTsHodoSi=0;
+					memset(&ana, 0, sizeof(ana));
+					memset(&pid, 0, sizeof(pid));
+					
+					tsSi=s800.tS;
+					dTsHodoSi=0.1*(tsHodo-tsSi);
+					ana.mulHodo=nHodo;
+					for(i=0; i<32; i++)
+						ana.egyHodo[i]=eHodo[i];
+					
+					ana.tke=CALTKE[0];
+					nGoodPin=0;
+					memset(goodPin, 0, sizeof(goodPin));
+					for(i=0; i<5; i++)
+						if(s800.pin[i]>AdcPinLow&&s800.pin[i]<AdcPinUp)
+						{
+							goodPin[i]=true;
+							nGoodPin++;
+							
+							ana.delE[i]=CALPIN[i][0]+CALPIN[i][1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
+							ana.tke+=CALTKE[i+1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
+						}
+				
+					for(m=0; m<2; m++)
+						if(s800.crdcAnode[m][0]>0&&s800.crdcAnode[m][1]>0)
+						{
+							//calculate y from the drift time to anode
+							ana.yCrdc[m]=s800.crdcAnode[m][1];
+							
+							TH1S hx("hx","hx",256,0,256);
+							for(i=1; i<=4; i++)
+								for(j=0; j<64; j++)
+								{
+									if(s800.crdcCath[m][i][j]>0)
+									{
+										k=(i-1)*64+j;
+										hx.Fill(k, s800.crdcCath[m][i][j]);
+									}
+								}
+							if(hx.GetEntries()>0)
+							{
+								//calculate x from gravity center
+								ana.xCrdc[m][0]=hx.GetMean();
+								//calculate x from Gaussian fit
+								TFitResultPtr fitX=hx.Fit("gaus","S0Q");
+								int fitSt=fitX;
+								if(fitSt!=0 && fitX->Parameter(1)>0 && fitX->Parameter(1)<256)
+									ana.xCrdc[m][1]=fitX->Parameter(1);
+							}
+						}
+					
+						
+					memset(nQdcTof, 0, sizeof(nQdcTof));
+					for(i=0; i<8; i++)
+						if(mqdcTOF.data[2*i+1]>QdcTofLow[i]&&mqdcTOF.data[2*i+1]<QdcUp)
+						{
+							j=i-i/4*4;
+							nQdcTof[i/4]++;
+							ana.egyPMT[i/4][j]=mqdcTOF.data[2*i+1]+r.Uniform(-0.5,0.5)-QdcTofLow[i];
+						}
+					if(nQdcTof[0]==4)
+					{
+						// ana.xPlaQ[2]=log(ana.egyPMT[0][0]*ana.egyPMT[0][1]/ana.egyPMT[0][2]/ana.egyPMT[0][3]);
+						// ana.yPlaQ[2]=log(ana.egyPMT[0][1]*ana.egyPMT[0][2]/ana.egyPMT[0][0]/ana.egyPMT[0][3]);
+						
+						ana.xPlaQ[0]=log(ana.egyPMT[0][1]/ana.egyPMT[0][3]);
+						ana.yPlaQ[0]=log(ana.egyPMT[0][2]/ana.egyPMT[0][0]);
+						ana.egyPla[0]=(ana.egyPMT[0][0]+ana.egyPMT[0][1]+ana.egyPMT[0][2]+ana.egyPMT[0][3])/4;
+					}
+					if(nQdcTof[1]==4)
+					{					
+						ana.xPlaQ[1]=log(ana.egyPMT[1][1]/ana.egyPMT[1][3]);
+						ana.yPlaQ[1]=log(ana.egyPMT[1][0]/ana.egyPMT[1][2]);
+						ana.egyPla[1]=(ana.egyPMT[1][0]+ana.egyPMT[1][1]+ana.egyPMT[1][2]+ana.egyPMT[1][3])/4;
+					}
 
-				ana.tke=CALTKE[0];
-				nGoodPin=0;
-				memset(goodPin, 0, sizeof(goodPin));
-				for(i=0; i<5; i++)
-					if(s800.pin[i]>AdcPinLow&&s800.pin[i]<AdcPinUp)
+					if(nGoodPin>1&&goodPin[0])
 					{
-						goodPin[i]=true;
-						nGoodPin++;
-						
-						ana.delE[i]=CALPIN[i][0]+CALPIN[i][1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
-						ana.tke+=CALTKE[i+1]*(s800.pin[i]+r.Uniform(-0.5,0.5));
-					}
-				if(nGoodPin>1&&goodPin[0])
-				{
-					memset(calQdcMcp, 0, sizeof(calQdcMcp));
-					memset(nGoodMcp, 0, sizeof(nGoodMcp));
-					if(runNum>=270)
-					{
-						for(i=0; i<4; i++)
+						memset(calQdcMcp, 0, sizeof(calQdcMcp));
+						memset(nGoodMcp, 0, sizeof(nGoodMcp));
+						if(runNum>=270)
 						{
-							if(mqdcMCP.data[i]>QdcMcpLow[i]&&mqdcMCP.data[i]<QdcUp)
+							for(i=0; i<4; i++)
 							{
-								nGoodMcp[0]++;
-								calQdcMcp[0][i]=mqdcMCP.data[i]-QdcMcpLow[i]+r.Uniform(-0.5,0.5);
-								
-								nGoodMcp[1]++;
-								calQdcMcp[1][i]=calQdcMcp[0][i];
-							}
-							m=iLow[i];
-							if(mqdcMCP.data[i]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow[m]&&mqdcMCP.data[m]<QdcUp)
-							{
-								
-								calQdcMcp[1][i]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m]+r.Uniform(-0.5,0.5));
-								if(calQdcMcp[1][i]>QdcUp-QdcMcpLow[i])
+								if(mqdcMCP.data[i]>QdcMcpLow[i]&&mqdcMCP.data[i]<QdcUp)
+								{
+									nGoodMcp[0]++;
+									calQdcMcp[0][i]=mqdcMCP.data[i]-QdcMcpLow[i]+r.Uniform(-0.5,0.5);
+									
 									nGoodMcp[1]++;
+									calQdcMcp[1][i]=calQdcMcp[0][i];
+								}
+								m=iLow[i];
+								if(mqdcMCP.data[i]>=QdcUp&&mqdcMCP.data[m]>QdcMcpLow[m]&&mqdcMCP.data[m]<QdcUp)
+								{
+									
+									calQdcMcp[1][i]=mcpGainMat[m][0]+mcpGainMat[m][1]*(mqdcMCP.data[m]-QdcMcpLow[m]+r.Uniform(-0.5,0.5));
+									if(calQdcMcp[1][i]>QdcUp-QdcMcpLow[i])
+										nGoodMcp[1]++;
+								}
 							}
+							
+							for(i=0; i<2; i++)
+								if(nGoodMcp[i]==4)
+								{
+									xMcpRaw=(calQdcMcp[i][0]+calQdcMcp[i][3]-calQdcMcp[i][1]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
+									
+									yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
+									
+									ana.xMCP[i]=CALXMCP[i][0]+CALXMCP[i][1]*xMcpRaw+CALXMCP[i][2]*pow(xMcpRaw,2)+CALXMCP[i][3]*yMcpRaw+CALXMCP[i][4]*pow(yMcpRaw,2)+CALXMCP[i][5]*pow(xMcpRaw,3)+CALXMCP[i][6]*pow(yMcpRaw,3)+CALXMCP[i][7]*xMcpRaw*yMcpRaw+CALXMCP[i][8]*pow(xMcpRaw,2)*yMcpRaw+CALXMCP[i][9]*xMcpRaw*pow(yMcpRaw,2);
+									
+									ana.yMCP[i]=CALYMCP[i][0]+CALYMCP[i][1]*yMcpRaw+CALYMCP[i][2]*pow(yMcpRaw,2)+CALYMCP[i][3]*xMcpRaw+CALYMCP[i][4]*pow(xMcpRaw,2)+CALYMCP[i][5]*pow(yMcpRaw,3)+CALYMCP[i][6]*pow(xMcpRaw,3)+CALYMCP[i][7]*yMcpRaw*xMcpRaw+CALYMCP[i][8]*pow(yMcpRaw,2)*xMcpRaw+CALYMCP[i][9]*yMcpRaw*pow(xMcpRaw,2);
+								}
 						}
-						
 						for(i=0; i<2; i++)
-							if(nGoodMcp[i]==4)
-							{
-								xMcpRaw=(calQdcMcp[i][0]+calQdcMcp[i][3]-calQdcMcp[i][1]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
-								
-								yMcpRaw=(calQdcMcp[i][1]+calQdcMcp[i][3]-calQdcMcp[i][0]-calQdcMcp[i][2])/(calQdcMcp[i][0]+calQdcMcp[i][1]+calQdcMcp[i][2]+calQdcMcp[i][3]);
-								
-								ana.xMCP[i]=CALXMCP[i][0]+CALXMCP[i][1]*xMcpRaw+CALXMCP[i][2]*pow(xMcpRaw,2)+CALXMCP[i][3]*yMcpRaw+CALXMCP[i][4]*pow(yMcpRaw,2)+CALXMCP[i][5]*pow(xMcpRaw,3)+CALXMCP[i][6]*pow(yMcpRaw,3)+CALXMCP[i][7]*xMcpRaw*yMcpRaw+CALXMCP[i][8]*pow(xMcpRaw,2)*yMcpRaw+CALXMCP[i][9]*xMcpRaw*pow(yMcpRaw,2);
-								
-								ana.yMCP[i]=CALYMCP[i][0]+CALYMCP[i][1]*yMcpRaw+CALYMCP[i][2]*pow(yMcpRaw,2)+CALYMCP[i][3]*xMcpRaw+CALYMCP[i][4]*pow(xMcpRaw,2)+CALYMCP[i][5]*pow(yMcpRaw,3)+CALYMCP[i][6]*pow(xMcpRaw,3)+CALYMCP[i][7]*yMcpRaw*xMcpRaw+CALYMCP[i][8]*pow(yMcpRaw,2)*xMcpRaw+CALYMCP[i][9]*yMcpRaw*pow(xMcpRaw,2);
-							}
-					}
-					for(i=0; i<2; i++)
-						ana.brho[i]=BRHO0*(1+ana.xMCP[i]/DISP/100);
-					
-					nGoodEvt=0;
-					for(iAna=0; iAna<4; iAna++)
-					{
-						memset(tPMT, 0, sizeof(tPMT));
-						memset(timeDet, 0, sizeof(timeDet));
+							ana.brho[i]=BRHO0*(1+ana.xMCP[i]/DISP/100);
 						
-						if(iAna==0) //For TAC+ADC+clock
+						nGoodEvt=0;
+						for(iAna=0; iAna<4; iAna++)
 						{
-							for(i=0; i<8; i++)
+							memset(tPMT, 0, sizeof(tPMT));
+							memset(timeDet, 0, sizeof(timeDet));
+							
+							if(iAna==0) //For TAC+ADC+clock
 							{
-								k=i/4;
-								if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
+								for(i=0; i<8; i++)
 								{
-									ana.numTime[0][k]++;
-									ana.sigTime[0][k]=10*ana.numTime[0][k]+(i+1);
-									tPMT[i]=CALADC[i]*(-madc.data[i]+r.Uniform(-0.5,0.5));
-									// timeDet[k]+=tPMT[i];
-								}
-							}
-							for(i=0; i<7; i++)
-								for(j=i+1; j<8; j++)
-									if(abs(tPMT[i])>0&&abs(tPMT[j])>0)
+									k=i/4;
+									if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
 									{
-										ana.tD[0][i][j]=tPMT[i]-tPMT[j];
-										ana.tD[0][j][i]=-ana.tD[0][i][j];
+										ana.numTime[0][k]++;
+										ana.sigTime[0][k]=10*ana.numTime[0][k]+(i+1);
+										tPMT[i]=CALADC[i]*(-madc.data[i]+r.Uniform(-0.5,0.5));
+										// timeDet[k]+=tPMT[i];
 									}
-							// if(ana.numTime[0][0]>0&&ana.numTime[0][1]>0)
-								// ana.tof[0]=timeDet[1]/ana.numTime[0][0]-timeDet[0]/ana.numTime[0][1];
-						}
-						
-						if(iAna==1) //For TAC+ADC
-						{
-							for(i=8; i<12; i++)
-							{
-								m=i-8;
-								p=i-4;
-								if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
-								{
-									ana.numTime[1][0]++;
-									ana.numTime[1][1]++;
-									ana.sigTime[1][0]=10*ana.numTime[1][0]+(m+1);
-									ana.sigTime[1][1]=10*ana.numTime[1][1]+(p+1);
-									ana.tD[1][p][m]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5, 0.5));
-									ana.tD[1][m][p]=-ana.tD[1][p][m];
-									ana.tof[1]+=ana.tD[1][p][m];
 								}
-							}
-							if(ana.numTime[1][0]==4)
-								ana.tof[1]/=ana.numTime[1][0];
-						}
-						
-						if(iAna>=2)
-						{
-							for(j=0; j<8; j++)
-							{
-								if(iAna==2)
-								{
-									k=j+1;
-									p=j;
-								}
-								if(iAna==3)
-								{
-									k=2*j+17;
-									p=j+8;
-								}
-								n=j/4;
-								if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p])
-								{
-									ana.numTime[iAna][n]++;
-									ana.sigTime[iAna][n]=10*ana.numTime[iAna][n]+(j+1);
-									tPMT[j]=CALTDC*(mtdc.data[k]+r.Uniform(-0.5, 0.5));
-									timeDet[n]+=tPMT[j];
-								}
-							}
-							for(i=0; i<7; i++)
-								for(j=i+1; j<8; j++)
-									if(abs(tPMT[i])>0&&abs(tPMT[j])>0)
-									{
-										ana.tD[iAna][i][j]=tPMT[i]-tPMT[j];
-										ana.tD[iAna][j][i]=-ana.tD[iAna][i][j];
-									}
-							if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
-								ana.tof[iAna]=timeDet[1]/ana.numTime[iAna][1]-timeDet[0]/ana.numTime[iAna][0];
-						}
-					}
-					
-					if(ana.numTime[0][0]==4&&ana.numTime[0][1]==4&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4)
-					{
-						for(i=0; i<7; i++)
-							for(j=i+1; j<8; j++)
-								for(k=0; k<3; k++)
-									if(abs(tDifRang[i][j][k][1])>0&&abs(tDifRang[i][j][k][2])>0)
-										if(ana.tD[0][i][j]-ana.tD[2][i][j]>tDifRang[i][j][k][1]&&ana.tD[0][i][j]-ana.tD[2][i][j]<tDifRang[i][j][k][2])
+								for(i=0; i<7; i++)
+									for(j=i+1; j<8; j++)
+										if(abs(tPMT[i])>0&&abs(tPMT[j])>0)
 										{
-											ana.tD[0][i][j]-=tDifRang[i][j][k][0];
+											ana.tD[0][i][j]=tPMT[i]-tPMT[j];
 											ana.tD[0][j][i]=-ana.tD[0][i][j];
 										}
-						ana.tof[0]=0;
-						k=0;
-						for(i=0; i<4; i++)
-							for(j=4; j<8; j++)
-							{
-								ana.tof[0]+=ana.tD[0][j][i];
-								k++;
+								// if(ana.numTime[0][0]>0&&ana.numTime[0][1]>0)
+									// ana.tof[0]=timeDet[1]/ana.numTime[0][0]-timeDet[0]/ana.numTime[0][1];
 							}
-						ana.tof[0]/=k;
-					}
-					
-					for(iAna=0; iAna<4; iAna++)
-					{						
-						if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
-						{
-							ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
 							
-							if(iAna!=1&&ana.numTime[iAna][0]==4)
+							if(iAna==1) //For TAC+ADC
 							{
-								ana.xPlaT[iAna][0]=(ana.tD[iAna][2][0]+ana.tD[iAna][3][1]+ana.tD[iAna][2][1]+ana.tD[iAna][3][0])/4;
-								ana.xPlaT[iAna][0]=(ana.tD[iAna][0][2]+ana.tD[iAna][3][1]+ana.tD[iAna][0][1]+ana.tD[iAna][3][2])/4;	
-								// ana.xPlaT[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1])/2;
-								// ana.yPlaT[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2])/2;	
-								// ana.xPlaT[iAna][0]=(tPMT[3]-tPMT[1]);
-								// ana.yPlaT[iAna][0]=(tPMT[0]-tPMT[2]);
-							}
-							if(iAna!=1&&ana.numTime[iAna][1]==4)
-							{
-								ana.xPlaT[iAna][1]=(ana.tD[iAna][4][6]+ana.tD[iAna][7][5]+ana.tD[iAna][4][5]+ana.tD[iAna][7][6])/4;
-								ana.xPlaT[iAna][1]=(ana.tD[iAna][6][4]+ana.tD[iAna][7][5]+ana.tD[iAna][6][5]+ana.tD[iAna][7][4])/4;
-								// ana.xPlaT[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6])/2;
-								// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5])/2;
-								// ana.xPlaT[iAna][1]=(tPMT[7]-tPMT[5]);
-								// ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[4]);
-							}
-
-							b=LOF/ana.tof[iAna]/0.299792458;
-							if(b>0&&b<1)
-							{
-								ana.beta[iAna]=b;
-								ana.gamma[iAna]=1/sqrt(1-b*b);
-														
-								ana.Z[iAna]=sqrt( ana.delE[0] / (log(5930/(1/b/b-1))/b/b-1) );
-								ana.Z[iAna]=CALZ[iAna][0]+CALZ[iAna][1]*ana.Z[iAna];
-								ana.Zi[iAna]=TMath::Nint(ana.Z[iAna]);
-								ana.dZ[iAna]=ana.Z[iAna]-ana.Zi[iAna];
-								
-								if(runNum==150||runNum==152||runNum==153||(nGoodMcp[1]==4&&nQdcTof[0]>0&&nQdcTof[1]>0))
+								for(i=8; i<12; i++)
 								{
-									for(k=0; k<2; k++)
+									m=i-8;
+									p=i-4;
+									if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
 									{
-										ana.AoQ[iAna][k]=ana.brho[k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184043;
-										ana.Q[iAna][k]=ana.tke/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
-										ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
-										ana.ZImQ[iAna][k]=ana.Zi[iAna]-ana.Q[iAna][k];
-										ana.A[iAna][k]=ana.AoQ[iAna][k]*ana.Q[iAna][k];
-										ana.Araw[iAna][k]=ana.AoQ[iAna][k]*ana.Zi[iAna];
-										ana.Am2Q[iAna][k]=ana.A[iAna][k]-2*ana.Q[iAna][k];
-										ana.Am3Q[iAna][k]=ana.A[iAna][k]-3*ana.Q[iAna][k];
-										ana.Am2Z[iAna][k]=ana.Araw[iAna][k]-2*ana.Zi[iAna];
-										ana.Am3Z[iAna][k]=ana.Araw[iAna][k]-3*ana.Zi[iAna];
-										ana.Am2Zi[iAna][k]=TMath::Nint(ana.Am2Z[iAna][k]);
-										ana.Am3Zi[iAna][k]=TMath::Nint(ana.Am3Z[iAna][k]);
-										ana.dAm2Z[iAna][k]=ana.Am2Z[iAna][k]-ana.Am2Zi[iAna][k];
-										ana.dAm3Z[iAna][k]=ana.Am3Z[iAna][k]-ana.Am3Zi[iAna][k];
-										// if(ana.Am3Z[iAna][k]<0)
-											// ana.dAm3Z[iAna][k]+=1;
+										ana.numTime[1][0]++;
+										ana.numTime[1][1]++;
+										ana.sigTime[1][0]=10*ana.numTime[1][0]+(m+1);
+										ana.sigTime[1][1]=10*ana.numTime[1][1]+(p+1);
+										ana.tD[1][p][m]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5, 0.5));
+										ana.tD[1][m][p]=-ana.tD[1][p][m];
+										ana.tof[1]+=ana.tD[1][p][m];
 									}
-									nGoodEvt++;
+								}
+								if(ana.numTime[1][0]==4)
+									ana.tof[1]/=ana.numTime[1][0];
+							}
+							
+							if(iAna>=2)
+							{
+								for(j=0; j<8; j++)
+								{
+									if(iAna==2)
+									{
+										k=j+1;
+										p=j;
+									}
+									if(iAna==3)
+									{
+										k=2*j+17;
+										p=j+8;
+									}
+									n=j/4;
+									if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p])
+									{
+										ana.numTime[iAna][n]++;
+										ana.sigTime[iAna][n]=10*ana.numTime[iAna][n]+(j+1);
+										tPMT[j]=CALTDC*(mtdc.data[k]+r.Uniform(-0.5, 0.5));
+										timeDet[n]+=tPMT[j];
+									}
+								}
+								for(i=0; i<7; i++)
+									for(j=i+1; j<8; j++)
+										if(abs(tPMT[i])>0&&abs(tPMT[j])>0)
+										{
+											ana.tD[iAna][i][j]=tPMT[i]-tPMT[j];
+											ana.tD[iAna][j][i]=-ana.tD[iAna][i][j];
+										}
+								if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
+									ana.tof[iAna]=timeDet[1]/ana.numTime[iAna][1]-timeDet[0]/ana.numTime[iAna][0];
+							}
+						}
+						
+						if(ana.numTime[0][0]==4&&ana.numTime[0][1]==4&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4)
+						{
+							for(i=0; i<7; i++)
+								for(j=i+1; j<8; j++)
+									for(k=0; k<3; k++)
+										if(abs(tDifRang[i][j][k][1])>0&&abs(tDifRang[i][j][k][2])>0)
+											if(ana.tD[0][i][j]-ana.tD[2][i][j]>tDifRang[i][j][k][1]&&ana.tD[0][i][j]-ana.tD[2][i][j]<tDifRang[i][j][k][2])
+											{
+												ana.tD[0][i][j]-=tDifRang[i][j][k][0];
+												ana.tD[0][j][i]=-ana.tD[0][i][j];
+											}
+							ana.tof[0]=0;
+							k=0;
+							for(i=0; i<4; i++)
+								for(j=4; j<8; j++)
+								{
+									ana.tof[0]+=ana.tD[0][j][i];
+									k++;
+								}
+							ana.tof[0]/=k;
+						}
+						
+						for(iAna=0; iAna<4; iAna++)
+						{						
+							if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
+							{
+								ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
+								
+								if(iAna!=1&&ana.numTime[iAna][0]==4)
+								{
+									ana.xPlaT[iAna][0]=(ana.tD[iAna][2][0]+ana.tD[iAna][3][1]+ana.tD[iAna][2][1]+ana.tD[iAna][3][0])/4;
+									ana.yPlaT[iAna][0]=(ana.tD[iAna][0][2]+ana.tD[iAna][3][1]+ana.tD[iAna][0][1]+ana.tD[iAna][3][2])/4;	
+									// ana.xPlaT[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1])/2;
+									// ana.yPlaT[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2])/2;	
+									// ana.xPlaT[iAna][0]=(tPMT[3]-tPMT[1]);
+									// ana.yPlaT[iAna][0]=(tPMT[0]-tPMT[2]);
+								}
+								if(iAna!=1&&ana.numTime[iAna][1]==4)
+								{
+									ana.xPlaT[iAna][1]=(ana.tD[iAna][4][6]+ana.tD[iAna][7][5]+ana.tD[iAna][4][5]+ana.tD[iAna][7][6])/4;
+									ana.yPlaT[iAna][1]=(ana.tD[iAna][6][4]+ana.tD[iAna][7][5]+ana.tD[iAna][6][5]+ana.tD[iAna][7][4])/4;
+									// ana.xPlaT[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6])/2;
+									// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5])/2;
+									// ana.xPlaT[iAna][1]=(tPMT[7]-tPMT[5]);
+									// ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[4]);
+								}
+
+								b=LOF/ana.tof[iAna]/0.299792458;
+								if(b>0&&b<1)
+								{
+									ana.beta[iAna]=b;
+									ana.gamma[iAna]=1/sqrt(1-b*b);
+															
+									ana.Z[iAna]=sqrt( ana.delE[0] / (log(5930/(1/b/b-1))/b/b-1) );
+									ana.Z[iAna]=CALZ[iAna][0]+CALZ[iAna][1]*ana.Z[iAna];
+									ana.Zi[iAna]=TMath::Nint(ana.Z[iAna]);
+									ana.dZ[iAna]=ana.Z[iAna]-ana.Zi[iAna];
+									
+									if(runNum==150||runNum==152||runNum==153||(nGoodMcp[1]==4&&nQdcTof[0]>0&&nQdcTof[1]>0))
+									{
+										for(k=0; k<2; k++)
+										{
+											ana.AoQ[iAna][k]=ana.brho[k]/ana.beta[iAna]/ana.gamma[iAna]*0.32184043;
+											ana.Q[iAna][k]=ana.tke/(931.4940954*(ana.gamma[iAna]-1)*ana.AoQ[iAna][k]);
+											ana.ZmQ[iAna][k]=ana.Z[iAna]-ana.Q[iAna][k];
+											ana.ZImQ[iAna][k]=ana.Zi[iAna]-ana.Q[iAna][k];
+											ana.A[iAna][k]=ana.AoQ[iAna][k]*ana.Q[iAna][k];
+											ana.Araw[iAna][k]=ana.AoQ[iAna][k]*ana.Zi[iAna];
+											ana.Am2Q[iAna][k]=ana.A[iAna][k]-2*ana.Q[iAna][k];
+											ana.Am3Q[iAna][k]=ana.A[iAna][k]-3*ana.Q[iAna][k];
+											ana.Am2Z[iAna][k]=ana.Araw[iAna][k]-2*ana.Zi[iAna];
+											ana.Am3Z[iAna][k]=ana.Araw[iAna][k]-3*ana.Zi[iAna];
+											ana.Am2Zi[iAna][k]=TMath::Nint(ana.Am2Z[iAna][k]);
+											ana.Am3Zi[iAna][k]=TMath::Nint(ana.Am3Z[iAna][k]);
+											ana.dAm2Z[iAna][k]=ana.Am2Z[iAna][k]-ana.Am2Zi[iAna][k];
+											ana.dAm3Z[iAna][k]=ana.Am3Z[iAna][k]-ana.Am3Zi[iAna][k];
+											// if(ana.Am3Z[iAna][k]<0)
+												// ana.dAm3Z[iAna][k]+=1;
+										}
+										nGoodEvt++;
+									}
 								}
 							}
 						}
-					}
-					
-					if(nGoodEvt>1&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4&&(runNum==150||runNum==152||runNum==153||(nGoodMcp[1]==4&&nQdcTof[0]==4&&nQdcTof[1]==4))) //standard condition  //begin to fill branch of pid						
-					{
-						pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*(ana.tD[2][4][0]+ana.tD[2][5][1]+ana.tD[2][6][2]+ana.tD[2][7][3])/4;
 						
-						b=LOF/pid.tof/0.299792458;
-						if(b>0&&b<1)
+						if(nGoodEvt>1&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4&&(runNum==150||runNum==152||runNum==153||(nGoodMcp[1]==4&&nQdcTof[0]==4&&nQdcTof[1]==4))) //standard condition  //begin to fill branch of pid						
 						{
-							pid.beta=b;
-							pid.gamma=1/sqrt(1-b*b);
+							pid.tof=CALTOF_PID[0]+CALTOF_PID[1]*(ana.tD[2][4][0]+ana.tD[2][5][1]+ana.tD[2][6][2]+ana.tD[2][7][3])/4;
+							
+							b=LOF/pid.tof/0.299792458;
+							if(b>0&&b<1)
+							{
+								pid.beta=b;
+								pid.gamma=1/sqrt(1-b*b);
 
-							pid.Z=sqrt( ana.delE[0]/ (log(5930/(1/b/b-1))/b/b-1) );
-							pid.Z=CALZ_PID[0]+CALZ_PID[1]*pid.Z;
-							pid.Zi=TMath::Nint(pid.Z);
-							pid.dZ=pid.Z-pid.Zi;
-							pid.AoQ=ana.brho[1]/pid.beta/pid.gamma*0.32184;
-							pid.Q=ana.tke/(931.4940954*(pid.gamma-1)*pid.AoQ);
-							pid.ZmQ=pid.Z-pid.Q;
-							pid.ZImQ=pid.Zi-pid.Q;
-							pid.A=pid.AoQ*pid.Q;
-							pid.Araw=pid.AoQ*pid.Zi;
-							pid.Am2Q=pid.A-2*pid.Q;
-							pid.Am3Q=pid.A-3*pid.Q;
-							pid.Am2Z=pid.Araw-2*pid.Zi;
-							pid.Am3Z=pid.Araw-3*pid.Zi;
-							pid.Am2Zi=TMath::Nint(pid.Am2Z);
-							pid.Am3Zi=TMath::Nint(pid.Am3Z);
-							pid.dAm2Z=pid.Am2Z-pid.Am2Zi;
-							pid.dAm3Z=pid.Am3Z-pid.Am3Zi;
-							// if(pid.Am3Z<0)
-								// pid.dAm3Z+=1;
-							tAna->Fill();
+								pid.Z=sqrt( ana.delE[0]/ (log(5930/(1/b/b-1))/b/b-1) );
+								pid.Z=CALZ_PID[0]+CALZ_PID[1]*pid.Z;
+								pid.Zi=TMath::Nint(pid.Z);
+								pid.dZ=pid.Z-pid.Zi;
+								pid.AoQ=ana.brho[1]/pid.beta/pid.gamma*0.32184;
+								pid.Q=ana.tke/(931.4940954*(pid.gamma-1)*pid.AoQ);
+								pid.ZmQ=pid.Z-pid.Q;
+								pid.ZImQ=pid.Zi-pid.Q;
+								pid.A=pid.AoQ*pid.Q;
+								pid.Araw=pid.AoQ*pid.Zi;
+								pid.Am2Q=pid.A-2*pid.Q;
+								pid.Am3Q=pid.A-3*pid.Q;
+								pid.Am2Z=pid.Araw-2*pid.Zi;
+								pid.Am3Z=pid.Araw-3*pid.Zi;
+								pid.Am2Zi=TMath::Nint(pid.Am2Z);
+								pid.Am3Zi=TMath::Nint(pid.Am3Z);
+								pid.dAm2Z=pid.Am2Z-pid.Am2Zi;
+								pid.dAm3Z=pid.Am3Z-pid.Am3Zi;
+								// if(pid.Am3Z<0)
+									// pid.dAm3Z+=1;
+								tAna->Fill();
+							}
 						}
 					}
 				}
@@ -697,11 +752,12 @@ void Root2Ana()
 		}//end of whole tree
 		fRoot->Close();
 		delete fRoot;
+		
+		fAna->cd();
+		tAna->Write();
+		fAna->Close();
+		delete fAna;
 	}
-	fAna->cd();
-	tAna->Write();
-	fAna->Close();
-	delete fAna;
 }//end of whole function
 
 
