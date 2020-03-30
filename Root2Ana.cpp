@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <cmath>
 #include <unistd.h>
+#include <vector>
+#include <omp.h>
 
 #include "TApplication.h"
 #include "TFile.h"
@@ -20,6 +22,7 @@
 #include "TFitResult.h"
 #include "TStyle.h"
 #include "TH1S.h"
+#include "TROOT.h"
 
 using namespace std;
 
@@ -76,12 +79,12 @@ struct StrtAna
 	double Am3Z[4][2];
 	double dAm2Z[4][2];
 	double dAm3Z[4][2];
-	int numTime[4][2];
-	int sigTime[4][2];
+	int numTime[4][2];  // [2]: [0] number of fired PMTs of S800 Plastic; [1] number of fired PMTs of A1900 Plastic
+	int sigTime[4][2]; // [2]: [0] indexes (combination of 1,2,3,4) of fired PMTs of S800 plastic; [1] indexes (combination of 5,6,7,8) of fired PMTs of A1900 plastic; 
 	int Zi[4];
 	int Am2Zi[4][2];
 	int Am3Zi[4][2];
-	double xCrdc[2][2];  //first [2]: two CRDCs; section [2]: [0] is from gravity center; [1] is from Gaussian fit
+	double xCrdc[2][2];  //first [2]: two CRDCs; second [2]: [0] is from gravity center; [1] is from Gaussian fit
 	double yCrdc[2];  //y is only considered from electron's drift time
 	int mulHodo;
 	double egyHodo[32];
@@ -122,78 +125,136 @@ const int QdcUp=3840;
 const double CALADC[12]={6.46209, 6.59645, 6.56230, 6.57185, 6.44156, 6.58265, 6.64827, 6.52219, 6.45537, 6.42844, 6.65406, 6.43436};  //unit: ps/ch
 const double CALTDC=3.90625; //ps/ch
 const double CALPIN[5][2]={{0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
-const double CALTKE[6]={81.071121, 1.071346, 0.662579, 3.013299, 2.826749, 0};  //unit: MeV/ch
+// const double CALTKE[6]={81.071121, 1.071346, 0.662579, 3.013299, 2.826749, 0};  //unit: MeV/ch
+const double CALTKE[6]={-174.696239, 1.103438, 0.733263, 2.960807, 2.920445, 7.258505};
 
 const double CALXMCP[2][10]={{0.733129,26.744387,-0.091781,1.043661,0.047598,9.192684,2.637526,-0.929438,2.056948,0.576781},{0.802060,26.063777,-0.897100,1.296354,1.163047,11.688516,3.208674,-1.230582,-2.736673,3.004569}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y
 const double CALYMCP[2][10]={{3.652901,19.180574,1.578795,-1.716251,0.330541,11.410052,-0.641449,-0.958885,0.507911,5.328422}, {3.727687,18.762661,-0.510623,-1.588110,-0.511162,10.227921,-1.138502,0.227536,0.858179,4.114189}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y	
 // const double CALXMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*x+[2]*x*x+[3]*y+[4]*y*y+[5]*x*x*x+[6]*y*y*y+[7]*x*y+[8]*x*x*y+[9]*x*y*y //for raw pos
 // const double CALYMCP[2][10]={{0,1,0,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0,0,0}}; //[0]+[1]*y+[2]*y*y+[3]*x+[4]*x*x+[5]*y*y*y+[6]*x*x*x+[7]*x*y+[8]*y*y*x+[9]*x*x*y //for raw pos
 
-const double CALTOF[4][2]={{500,-0.001}, {513.269,-0.001}, {579.248,-0.001}, {500,-0.001}};
+const double CALTOF[4][2]={{487.3099,-0.001}, {513.3008,-0.001}, {578.8793,-0.001}, {500,-0.001}};
 const double BRHO0=3.7211; //Tm
 const double DISP=106.84; // mm/%
 const double LOF=60.763; //m
-const double CALZ[4][2]={{0,1},{1.0214,5.9613},{1.0616,5.9556},{0,1}};
+const double CALZ[4][2]={{1.2768,5.9166},{1.1976,5.9335},{1.3354,5.9030},{0,1}};
 // const double CALZ[4][2]={{0,1},{0,1},{0,1},{0,1}};
 
-const double CALTOF_PID[2]={579.248,-0.001};
-const double CALZ_PID[2]={1.0616,5.9556};
+const double CALTOF_PID[2]={578.8793,-0.001};
+const double CALZ_PID[2]={1.3354,5.9030};
 
 const int iLow[4]={6, 5, 4, 7};
 const string sSet[2]={"PS_270_382", "RS_270_382"};
 
 void Root2Ana()
-{	
-	double tDifRang[8][8][3][3]={0};  //first [3]: [0] mean middle peak; [1] means left peak; [2] means right peak.  second [3]: [0] mean shift value; [1] means lower limit of the peak; [2] means upper limit of the peak
-	tDifRang[0][4][0][1]=92020;  tDifRang[0][4][0][2]=92330;
-	tDifRang[0][4][2][1]=137590;  tDifRang[0][4][2][2]=137810;  tDifRang[0][4][2][0]=45519;
-	tDifRang[0][5][1][1]=46740;  tDifRang[0][5][1][2]=47000;  tDifRang[0][5][1][0]=-45463;
-	tDifRang[0][5][0][1]=92190;  tDifRang[0][5][0][2]=92520;
-	tDifRang[0][5][2][1]=137750;  tDifRang[0][5][2][2]=137930;  tDifRang[0][5][2][0]=45502;
-	tDifRang[0][6][0][1]=92370;  tDifRang[0][6][0][2]=92620;
-	tDifRang[0][6][2][1]=137860;  tDifRang[0][6][2][2]=138090;  tDifRang[0][6][2][0]=45489;
-	tDifRang[0][7][0][1]=92630;  tDifRang[0][7][0][2]=92880;
-	tDifRang[0][7][2][1]=138110;  tDifRang[0][7][2][2]=138320;  tDifRang[0][7][2][0]=45474;
+{
+	int i, j, k, m, n, p;
 	
-	tDifRang[1][4][0][1]=91110;  tDifRang[1][4][0][2]=91400;
-	tDifRang[1][4][2][1]=136690;  tDifRang[1][4][2][2]=136890;  tDifRang[1][4][2][0]=45534;
-	tDifRang[1][5][1][1]=45810;  tDifRang[1][5][1][2]=46070;  tDifRang[1][5][1][0]=-45477;
-	tDifRang[1][5][0][1]=91290;  tDifRang[1][5][0][2]=91600;
-	tDifRang[1][5][2][1]=136850;  tDifRang[1][5][2][2]=137010;  tDifRang[1][5][2][0]=45513;
-	tDifRang[1][6][0][1]=91450;  tDifRang[1][6][0][2]=91690;
-	tDifRang[1][6][2][1]=136950;  tDifRang[1][6][2][2]=137160;  tDifRang[1][6][2][0]=45503;
-	tDifRang[1][7][0][1]=91700;  tDifRang[1][7][0][2]=91950;
-	tDifRang[1][7][2][1]=137200;  tDifRang[1][7][2][2]=137400;  tDifRang[1][7][2][0]=45488;
+	double tDifRang[8][8][3][3]={0};  //First [3]: [0] target peak; [1] 1st other peak; [2] 2nd other peak.  Second [3]: [0] shift value; [1] lower limit of the peak; [2] upper limit of the peak
+
+	// tDifRang[0][4][0][1]=92020;  tDifRang[0][4][0][2]=92330;
+	// tDifRang[0][4][2][1]=137590;  tDifRang[0][4][2][2]=137810;  tDifRang[0][4][2][0]=45519;
+	// tDifRang[0][5][1][1]=46740;  tDifRang[0][5][1][2]=47000;  tDifRang[0][5][1][0]=-45463;
+	// tDifRang[0][5][0][1]=92190;  tDifRang[0][5][0][2]=92520;
+	// tDifRang[0][5][2][1]=137750;  tDifRang[0][5][2][2]=137930;  tDifRang[0][5][2][0]=45502;
+	// tDifRang[0][6][0][1]=92370;  tDifRang[0][6][0][2]=92620;
+	// tDifRang[0][6][2][1]=137860;  tDifRang[0][6][2][2]=138090;  tDifRang[0][6][2][0]=45489;
+	// tDifRang[0][7][0][1]=92630;  tDifRang[0][7][0][2]=92880;
+	// tDifRang[0][7][2][1]=138110;  tDifRang[0][7][2][2]=138320;  tDifRang[0][7][2][0]=45474;
 	
-	tDifRang[2][4][0][1]=91270;  tDifRang[2][4][0][2]=91550;
-	tDifRang[2][4][2][1]=136830;  tDifRang[2][4][2][2]=137040;  tDifRang[2][4][2][0]=45527;
-	tDifRang[2][5][1][1]=45960;  tDifRang[2][5][1][2]=46220;  tDifRang[2][5][1][0]=-45469;
-	tDifRang[2][5][0][1]=91430;  tDifRang[2][5][0][2]=91750;
-	tDifRang[2][5][2][1]=136990;  tDifRang[2][5][2][2]=137160;  tDifRang[2][5][2][0]=45509;
-	tDifRang[2][6][0][1]=91600;  tDifRang[2][6][0][2]=91830;
-	tDifRang[2][6][2][1]=137100;  tDifRang[2][6][2][2]=137300;  tDifRang[2][6][2][0]=45496;
-	tDifRang[2][7][0][1]=91850;  tDifRang[2][7][0][2]=92100;
-	tDifRang[2][7][2][1]=137340;  tDifRang[2][7][2][2]=137550;  tDifRang[2][7][2][0]=45482;
+	// tDifRang[1][4][0][1]=91110;  tDifRang[1][4][0][2]=91400;
+	// tDifRang[1][4][2][1]=136690;  tDifRang[1][4][2][2]=136890;  tDifRang[1][4][2][0]=45534;
+	// tDifRang[1][5][1][1]=45810;  tDifRang[1][5][1][2]=46070;  tDifRang[1][5][1][0]=-45477;
+	// tDifRang[1][5][0][1]=91290;  tDifRang[1][5][0][2]=91600;
+	// tDifRang[1][5][2][1]=136850;  tDifRang[1][5][2][2]=137010;  tDifRang[1][5][2][0]=45513;
+	// tDifRang[1][6][0][1]=91450;  tDifRang[1][6][0][2]=91690;
+	// tDifRang[1][6][2][1]=136950;  tDifRang[1][6][2][2]=137160;  tDifRang[1][6][2][0]=45503;
+	// tDifRang[1][7][0][1]=91700;  tDifRang[1][7][0][2]=91950;
+	// tDifRang[1][7][2][1]=137200;  tDifRang[1][7][2][2]=137400;  tDifRang[1][7][2][0]=45488;
 	
-	tDifRang[3][4][0][1]=90120;  tDifRang[3][4][0][2]=90420;
-	tDifRang[3][4][2][1]=135700;  tDifRang[3][4][2][2]=135920;  tDifRang[3][4][2][0]=45541;
-	tDifRang[3][5][1][1]=44800;  tDifRang[3][5][1][2]=45080;  tDifRang[3][5][1][0]=-45486;
-	tDifRang[3][5][0][1]=90310;  tDifRang[3][5][0][2]=90630;
-	tDifRang[3][5][2][1]=135870;  tDifRang[3][5][2][2]=136050;  tDifRang[3][5][2][0]=45523;
-	tDifRang[3][6][0][1]=90450;  tDifRang[3][6][0][2]=90710;
-	tDifRang[3][6][2][1]=135970;  tDifRang[3][6][2][2]=136180;  tDifRang[3][6][2][0]=45512;
-	tDifRang[3][7][0][1]=90690;  tDifRang[3][7][0][2]=90980;
-	tDifRang[3][7][2][1]=136220;  tDifRang[3][7][2][2]=136430;  tDifRang[3][7][2][0]=45497;
+	// tDifRang[2][4][0][1]=91270;  tDifRang[2][4][0][2]=91550;
+	// tDifRang[2][4][2][1]=136830;  tDifRang[2][4][2][2]=137040;  tDifRang[2][4][2][0]=45527;
+	// tDifRang[2][5][1][1]=45960;  tDifRang[2][5][1][2]=46220;  tDifRang[2][5][1][0]=-45469;
+	// tDifRang[2][5][0][1]=91430;  tDifRang[2][5][0][2]=91750;
+	// tDifRang[2][5][2][1]=136990;  tDifRang[2][5][2][2]=137160;  tDifRang[2][5][2][0]=45509;
+	// tDifRang[2][6][0][1]=91600;  tDifRang[2][6][0][2]=91830;
+	// tDifRang[2][6][2][1]=137100;  tDifRang[2][6][2][2]=137300;  tDifRang[2][6][2][0]=45496;
+	// tDifRang[2][7][0][1]=91850;  tDifRang[2][7][0][2]=92100;
+	// tDifRang[2][7][2][1]=137340;  tDifRang[2][7][2][2]=137550;  tDifRang[2][7][2][0]=45482;
 	
-	tDifRang[4][5][0][1]=-45540;  tDifRang[4][5][0][2]=-45120;
-	tDifRang[4][5][2][1]=40;  tDifRang[4][5][2][2]=340;  tDifRang[4][5][2][0]=45534;
+	// tDifRang[3][4][0][1]=90120;  tDifRang[3][4][0][2]=90420;
+	// tDifRang[3][4][2][1]=135700;  tDifRang[3][4][2][2]=135920;  tDifRang[3][4][2][0]=45541;
+	// tDifRang[3][5][1][1]=44800;  tDifRang[3][5][1][2]=45080;  tDifRang[3][5][1][0]=-45486;
+	// tDifRang[3][5][0][1]=90310;  tDifRang[3][5][0][2]=90630;
+	// tDifRang[3][5][2][1]=135870;  tDifRang[3][5][2][2]=136050;  tDifRang[3][5][2][0]=45523;
+	// tDifRang[3][6][0][1]=90450;  tDifRang[3][6][0][2]=90710;
+	// tDifRang[3][6][2][1]=135970;  tDifRang[3][6][2][2]=136180;  tDifRang[3][6][2][0]=45512;
+	// tDifRang[3][7][0][1]=90690;  tDifRang[3][7][0][2]=90980;
+	// tDifRang[3][7][2][1]=136220;  tDifRang[3][7][2][2]=136430;  tDifRang[3][7][2][0]=45497;
 	
-	tDifRang[5][6][0][1]=45400;  tDifRang[5][6][0][2]=45800;
-	tDifRang[5][6][1][1]=-30;  tDifRang[5][6][1][2]=220;  tDifRang[5][6][1][0]=-45524;
+	// tDifRang[4][5][0][1]=-45540;  tDifRang[4][5][0][2]=-45120;
+	// tDifRang[4][5][2][1]=40;  tDifRang[4][5][2][2]=340;  tDifRang[4][5][2][0]=45534;
 	
-	tDifRang[5][7][0][1]=45690;  tDifRang[5][7][0][2]=45690;
-	tDifRang[5][7][1][1]=240;  tDifRang[5][7][1][2]=500;  tDifRang[5][7][1][0]=-45512;
+	// tDifRang[5][6][0][1]=45400;  tDifRang[5][6][0][2]=45800;
+	// tDifRang[5][6][1][1]=-30;  tDifRang[5][6][1][2]=220;  tDifRang[5][6][1][0]=-45524;
 	
+	// tDifRang[5][7][0][1]=45690;  tDifRang[5][7][0][2]=45690;
+	// tDifRang[5][7][1][1]=240;  tDifRang[5][7][1][2]=500;  tDifRang[5][7][1][0]=-45512;
+
+	tDifRang[0][4][0][1]=91946.1615;    tDifRang[0][4][0][2]=92418.2385;    tDifRang[0][4][0][0]=0;    
+	tDifRang[0][4][2][1]=137547.8215;    tDifRang[0][4][2][2]=137858.1785;    tDifRang[0][4][2][0]=-45520.8;    
+	tDifRang[0][5][0][1]=92098.117;    tDifRang[0][5][0][2]=92588.683;    tDifRang[0][5][0][0]=0;    
+	tDifRang[0][5][1][1]=46656.1985;    tDifRang[0][5][1][2]=47095.0015;    tDifRang[0][5][1][0]=45467.8;    
+	tDifRang[0][5][2][1]=137702.6235;    tDifRang[0][5][2][2]=137985.3765;    tDifRang[0][5][2][0]=-45500.6;    
+	tDifRang[0][6][0][1]=92299.8165;    tDifRang[0][6][0][2]=92683.1835;    tDifRang[0][6][0][0]=0;    
+	tDifRang[0][6][2][1]=137816.3455;    tDifRang[0][6][2][2]=138141.6545;    tDifRang[0][6][2][0]=-45487.5;    
+	tDifRang[0][7][0][1]=92552.782;    tDifRang[0][7][0][2]=92928.818;    tDifRang[0][7][0][0]=0;    
+	tDifRang[0][7][2][1]=138063.1035;    tDifRang[0][7][2][2]=138362.8965;    tDifRang[0][7][2][0]=-45472.2;    
+	tDifRang[1][4][0][1]=91030.6975;    tDifRang[1][4][0][2]=91482.3025;    tDifRang[1][4][0][0]=0;    
+	tDifRang[1][4][2][1]=136646.0365;    tDifRang[1][4][2][2]=136935.9635;    tDifRang[1][4][2][0]=-45534.5;    
+	tDifRang[1][5][0][1]=91208.8365;    tDifRang[1][5][0][2]=91645.5635;    tDifRang[1][5][0][0]=0;    
+	tDifRang[1][5][1][1]=45725.1385;    tDifRang[1][5][1][2]=46164.8615;    tDifRang[1][5][1][0]=45482.2;    
+	tDifRang[1][5][2][1]=136805.889;    tDifRang[1][5][2][2]=137068.111;    tDifRang[1][5][2][0]=-45509.8;    
+	tDifRang[1][6][0][1]=91374.381;    tDifRang[1][6][0][2]=91755.619;    tDifRang[1][6][0][0]=0;    
+	tDifRang[1][6][2][1]=136923.1805;    tDifRang[1][6][2][2]=137210.8195;    tDifRang[1][6][2][0]=-45502;    
+	tDifRang[1][7][0][1]=91622.6245;    tDifRang[1][7][0][2]=92006.3755;    tDifRang[1][7][0][0]=0;    
+	tDifRang[1][7][2][1]=137163.732;    tDifRang[1][7][2][2]=137438.268;    tDifRang[1][7][2][0]=-45486.5;    
+	tDifRang[2][4][0][1]=91184.7185;    tDifRang[2][4][0][2]=91627.8815;    tDifRang[2][4][0][0]=0;    
+	tDifRang[2][4][2][1]=136788.724;    tDifRang[2][4][2][2]=137079.276;    tDifRang[2][4][2][0]=-45527.7;    
+	tDifRang[2][5][0][1]=91344.4205;    tDifRang[2][5][0][2]=91799.9795;    tDifRang[2][5][0][0]=0;    
+	tDifRang[2][5][1][1]=45878.2845;    tDifRang[2][5][1][2]=46317.7155;    tDifRang[2][5][1][0]=45474.2;    
+	tDifRang[2][5][2][1]=136945.1495;    tDifRang[2][5][2][2]=137212.8505;    tDifRang[2][5][2][0]=-45506.8;    
+	tDifRang[2][6][0][1]=91528.282;    tDifRang[2][6][0][2]=91901.718;    tDifRang[2][6][0][0]=0;    
+	tDifRang[2][6][2][1]=137069.6845;    tDifRang[2][6][2][2]=137350.3155;    tDifRang[2][6][2][0]=-45495;    
+	tDifRang[2][7][0][1]=91769.18;    tDifRang[2][7][0][2]=92158.42;    tDifRang[2][7][0][0]=0;    
+	tDifRang[2][7][2][1]=137303.185;    tDifRang[2][7][2][2]=137586.815;    tDifRang[2][7][2][0]=-45481.2;    
+	tDifRang[3][4][0][1]=90039.978;    tDifRang[3][4][0][2]=90500.822;    tDifRang[3][4][0][0]=0;    
+	tDifRang[3][4][2][1]=135654.7095;    tDifRang[3][4][2][2]=135969.2905;    tDifRang[3][4][2][0]=-45541.6;    
+	tDifRang[3][5][0][1]=90218.2185;    tDifRang[3][5][0][2]=90672.5815;    tDifRang[3][5][0][0]=0;    
+	tDifRang[3][5][1][1]=44722.1455;    tDifRang[3][5][1][2]=45187.0545;    tDifRang[3][5][1][0]=45490.8;    
+	tDifRang[3][5][2][1]=135828.6465;    tDifRang[3][5][2][2]=136103.3535;    tDifRang[3][5][2][0]=-45520.6;    
+	tDifRang[3][6][0][1]=90370.358;    tDifRang[3][6][0][2]=90784.842;    tDifRang[3][6][0][0]=0;    
+	tDifRang[3][6][2][1]=135939.9985;    tDifRang[3][6][2][2]=136238.0015;    tDifRang[3][6][2][0]=-45511.4;    
+	tDifRang[3][7][0][1]=90609.9805;    tDifRang[3][7][0][2]=91044.4195;    tDifRang[3][7][0][0]=0;    
+	tDifRang[3][7][2][1]=136171.7905;    tDifRang[3][7][2][2]=136474.2095;    tDifRang[3][7][2][0]=-45495.8;    
+	tDifRang[4][5][0][1]=-66.9775;    tDifRang[4][5][0][2]=433.8495;    tDifRang[4][5][0][0]=0;    
+	tDifRang[4][5][1][1]=-45668.889;    tDifRang[4][5][1][2]=-45029.711;    tDifRang[4][5][1][0]=45532.736;    
+	tDifRang[4][6][0][1]=111.184;    tDifRang[4][6][0][2]=475.256;    tDifRang[4][6][0][0]=0;    
+	tDifRang[4][6][1][1]=45479.5005;    tDifRang[4][6][1][2]=46148.0995;    tDifRang[4][6][1][0]=-45520.58;    
+	tDifRang[4][7][0][1]=351.784;    tDifRang[4][7][0][2]=717.014;    tDifRang[4][7][0][0]=0;    
+	tDifRang[5][6][0][1]=-45.1135;    tDifRang[5][6][0][2]=281.8895;    tDifRang[5][6][0][0]=0;    
+	tDifRang[5][6][1][1]=45370.395;    tDifRang[5][6][1][2]=45912.205;    tDifRang[5][6][1][0]=-45522.912;    
+	tDifRang[5][7][0][1]=198.884;    tDifRang[5][7][0][2]=541.504;    tDifRang[5][7][0][0]=0;    
+	tDifRang[5][7][1][1]=45623.7555;    tDifRang[5][7][1][2]=46138.8445;    tDifRang[5][7][1][0]=-45511.106;    
+	tDifRang[6][7][0][1]=125.1625;    tDifRang[6][7][0][2]=360.3755;    tDifRang[6][7][0][0]=0;    
+	tDifRang[0][1][0][1]=820.682;    tDifRang[0][1][0][2]=1020.174;    tDifRang[0][1][0][0]=0;    
+	tDifRang[0][2][0][1]=677.7995;    tDifRang[0][2][0][2]=868.7385;    tDifRang[0][2][0][0]=0;    
+	tDifRang[0][3][0][1]=1753.806;    tDifRang[0][3][0][2]=2054.154;    tDifRang[0][3][0][0]=0;    
+	tDifRang[1][2][0][1]=-222.349;    tDifRang[1][2][0][2]=-71.923;    tDifRang[1][2][0][0]=0;    
+	tDifRang[1][3][0][1]=877.234;    tDifRang[1][3][0][2]=1089.562;    tDifRang[1][3][0][0]=0;    
+	tDifRang[2][3][0][1]=1014.0495;    tDifRang[2][3][0][2]=1247.9505;    tDifRang[2][3][0][0]=0;        
+ 
+
 	double calHodo[32][2]={0};
 	int nH=0;
 	string strRead;
@@ -211,12 +272,36 @@ void Root2Ana()
 	}
 	fCalHodo.close();
 	
+	TFile *fNonLin=new TFile("fNonLin.root");
+	TCanvas *cINLTacAdc;
+	TGraph *grINL[12];
+	vector<vector<double> > inl(12, vector<double>(8192, 0));
+	fNonLin->GetObject("cINLTacAdc", cINLTacAdc);
+	cINLTacAdc->Draw();
+	for(i=0; i<12; i++)
+	{
+		cINLTacAdc->cd(i+1);
+		grINL[i]=(TGraph*)(gPad->GetPrimitive(("INL_TacAdc_"+to_string(i)).c_str()));
+		
+		for(j=0; j<grINL[i]->GetN(); j++)
+		{
+			double vINL=grINL[i]->GetY()[j];
+			if(abs(vINL)>0)
+			{
+				k=(int)(grINL[i]->GetX()[j]);
+				inl[i][k]=vINL;
+			}
+		}
+	}
+	fNonLin->Close();
+	delete fNonLin;
+	
 	gStyle->SetOptStat("nemri");
 	gStyle->SetPadGridX(1);
 	gStyle->SetPadGridY(1);
 	gStyle->SetOptFit(1);
-	gStyle->SetCanvasDefH(1080);
-	gStyle->SetCanvasDefW(1920);
+	gStyle->SetCanvasDefH(900);
+	gStyle->SetCanvasDefW(1200);
 	
 	string sRoot, sAna;	
 	StrtMesytec madc, mtdc, mqdcTOF, mqdcMCP;
@@ -231,7 +316,6 @@ void Root2Ana()
 	const int LjEnt=0, UjEnt=1;
 	int ts[UjEnt+LjEnt]={0};
 	int tsSi=0, tsHodo=0;
-	int i, j, k, m, n, p;
 	int iAna;
 	double eHodo[32];
 	int nHodo;
@@ -249,12 +333,13 @@ void Root2Ana()
 	cin>>runMin>>runMax;
 	
 	ostringstream ssRun;
+	// #pragma omp parallel for
 	for(runNum=runMin; runNum<=runMax; runNum++)
-	{
+	{		
 		sAna="/home/kailong/ExpData/Jul2018/AnaData/ana-run-"+to_string(runNum)+".root";
 		TFile *fAna=new TFile(sAna.c_str(), "RECREATE");
 		TTree *tAna=new TTree("tAna", "tree for data analysis");
-
+		
 		tAna->Branch("setting", &setting);
 		tAna->Branch("run", &run, "run/I");
 		// tAna->Branch("dTsHodoSi", &dTsHodoSi, "dTsHodoSi/D");
@@ -556,9 +641,9 @@ void Root2Ana()
 									if(madc.data[i]>AdcTofLow&&madc.data[i]<AdcTofUp)
 									{
 										ana.numTime[0][k]++;
-										ana.sigTime[0][k]=10*ana.numTime[0][k]+(i+1);
-										tPMT[i]=CALADC[i]*(-madc.data[i]+r.Uniform(-0.5,0.5));
-										// timeDet[k]+=tPMT[i];
+										ana.sigTime[0][k]=10*ana.sigTime[0][k]+(i+1);
+										tPMT[i]=(CALADC[i]+0)*(-madc.data[i]+r.Uniform(-0.5,0.5));
+										timeDet[k]+=tPMT[i];
 									}
 								}
 								for(i=0; i<7; i++)
@@ -568,8 +653,8 @@ void Root2Ana()
 											ana.tD[0][i][j]=tPMT[i]-tPMT[j];
 											ana.tD[0][j][i]=-ana.tD[0][i][j];
 										}
-								// if(ana.numTime[0][0]>0&&ana.numTime[0][1]>0)
-									// ana.tof[0]=timeDet[1]/ana.numTime[0][0]-timeDet[0]/ana.numTime[0][1];
+								if(ana.numTime[0][0]>0&&ana.numTime[0][1]>0)
+									ana.tof[0]=timeDet[1]/ana.numTime[0][1]-timeDet[0]/ana.numTime[0][0];
 							}
 							
 							if(iAna==1) //For TAC+ADC
@@ -582,9 +667,9 @@ void Root2Ana()
 									{
 										ana.numTime[1][0]++;
 										ana.numTime[1][1]++;
-										ana.sigTime[1][0]=10*ana.numTime[1][0]+(m+1);
-										ana.sigTime[1][1]=10*ana.numTime[1][1]+(p+1);
-										ana.tD[1][p][m]=CALADC[i]*(madc.data[i]+r.Uniform(-0.5, 0.5));
+										ana.sigTime[1][0]=10*ana.sigTime[1][0]+(m+1);
+										ana.sigTime[1][1]=10*ana.sigTime[1][1]+(p+1);
+										ana.tD[1][p][m]=(CALADC[i]+0)*(madc.data[i]+r.Uniform(-0.5, 0.5));
 										ana.tD[1][m][p]=-ana.tD[1][p][m];
 										ana.tof[1]+=ana.tD[1][p][m];
 									}
@@ -611,7 +696,7 @@ void Root2Ana()
 									if(mtdc.data[k]>TdcTofLow[p]&&mtdc.data[k]<TdcTofUp[p])
 									{
 										ana.numTime[iAna][n]++;
-										ana.sigTime[iAna][n]=10*ana.numTime[iAna][n]+(j+1);
+										ana.sigTime[iAna][n]=10*ana.sigTime[iAna][n]+(j+1);
 										tPMT[j]=CALTDC*(mtdc.data[k]+r.Uniform(-0.5, 0.5));
 										timeDet[n]+=tPMT[j];
 									}
@@ -630,49 +715,55 @@ void Root2Ana()
 						
 						if(ana.numTime[0][0]==4&&ana.numTime[0][1]==4&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4)
 						{
+							bool isShift[8][8]={0};
 							for(i=0; i<7; i++)
 								for(j=i+1; j<8; j++)
-									for(k=0; k<3; k++)
-										if(abs(tDifRang[i][j][k][1])>0&&abs(tDifRang[i][j][k][2])>0)
-											if(ana.tD[0][i][j]-ana.tD[2][i][j]>tDifRang[i][j][k][1]&&ana.tD[0][i][j]-ana.tD[2][i][j]<tDifRang[i][j][k][2])
+								{
+									isShift[i][j]=false;
+									if(abs(ana.tD[0][i][j])>0 && abs(ana.tD[2][i][j])>0)
+									{
+										for(k=0; k<3; k++)
+											if(abs(tDifRang[i][j][k][1])>0 && abs(tDifRang[i][j][k][2])>0 && (ana.tD[0][i][j]-ana.tD[2][i][j])>tDifRang[i][j][k][1] && (ana.tD[0][i][j]-ana.tD[2][i][j])<tDifRang[i][j][k][2])
 											{
-												ana.tD[0][i][j]-=tDifRang[i][j][k][0];
-												ana.tD[0][j][i]=-ana.tD[0][i][j];
+												isShift[i][j]=true;
+												ana.tD[0][i][j]+=tDifRang[i][j][k][0];
+												break;
 											}
+										if(!isShift[i][j])
+											ana.tD[0][i][j]=0;
+										ana.tD[0][j][i]=-ana.tD[0][i][j];
+									}
+								}
 							ana.tof[0]=0;
 							k=0;
 							for(i=0; i<4; i++)
 								for(j=4; j<8; j++)
-								{
-									ana.tof[0]+=ana.tD[0][j][i];
-									k++;
-								}
+									if(abs(ana.tD[0][j][i])>0 && isShift[i][j])
+									{
+										ana.tof[0]+=ana.tD[0][j][i];
+										k++;
+									}
 							ana.tof[0]/=k;
 						}
 						
-						for(iAna=0; iAna<4; iAna++)
-						{						
-							if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4)
+						for(iAna=0; iAna<4; iAna++)						
+							if(ana.numTime[iAna][0]==4&&ana.numTime[iAna][1]==4 && abs(ana.tof[iAna])>0)
 							{
 								ana.tof[iAna]=CALTOF[iAna][0]+CALTOF[iAna][1]*ana.tof[iAna];
 								
 								if(iAna!=1&&ana.numTime[iAna][0]==4)
 								{
-									ana.xPlaT[iAna][0]=(ana.tD[iAna][2][0]+ana.tD[iAna][3][1]+ana.tD[iAna][2][1]+ana.tD[iAna][3][0])/4;
-									ana.yPlaT[iAna][0]=(ana.tD[iAna][0][2]+ana.tD[iAna][3][1]+ana.tD[iAna][0][1]+ana.tD[iAna][3][2])/4;	
-									// ana.xPlaT[iAna][0]=(tPMT[2]+tPMT[3]-tPMT[0]-tPMT[1])/2;
-									// ana.yPlaT[iAna][0]=(tPMT[0]+tPMT[3]-tPMT[1]-tPMT[2])/2;	
-									// ana.xPlaT[iAna][0]=(tPMT[3]-tPMT[1]);
-									// ana.yPlaT[iAna][0]=(tPMT[0]-tPMT[2]);
+									// ana.xPlaT[iAna][0]=(ana.tD[iAna][2][0]+ana.tD[iAna][3][1]+ana.tD[iAna][2][1]+ana.tD[iAna][3][0])/4;
+									// ana.yPlaT[iAna][0]=(ana.tD[iAna][0][2]+ana.tD[iAna][3][1]+ana.tD[iAna][0][1]+ana.tD[iAna][3][2])/4;		
+									ana.xPlaT[iAna][0]=ana.tD[iAna][3][1];
+									ana.yPlaT[iAna][0]=ana.tD[iAna][0][2];
 								}
 								if(iAna!=1&&ana.numTime[iAna][1]==4)
 								{
-									ana.xPlaT[iAna][1]=(ana.tD[iAna][4][6]+ana.tD[iAna][7][5]+ana.tD[iAna][4][5]+ana.tD[iAna][7][6])/4;
-									ana.yPlaT[iAna][1]=(ana.tD[iAna][6][4]+ana.tD[iAna][7][5]+ana.tD[iAna][6][5]+ana.tD[iAna][7][4])/4;
-									// ana.xPlaT[iAna][1]=(tPMT[4]+tPMT[7]-tPMT[5]-tPMT[6])/2;
-									// ana.yPlaT[iAna][1]=(tPMT[6]+tPMT[7]-tPMT[4]-tPMT[5])/2;
-									// ana.xPlaT[iAna][1]=(tPMT[7]-tPMT[5]);
-									// ana.yPlaT[iAna][1]=(tPMT[6]-tPMT[4]);
+									// ana.xPlaT[iAna][1]=(ana.tD[iAna][4][6]+ana.tD[iAna][7][5]+ana.tD[iAna][4][5]+ana.tD[iAna][7][6])/4;
+									// ana.yPlaT[iAna][1]=(ana.tD[iAna][6][4]+ana.tD[iAna][7][5]+ana.tD[iAna][6][5]+ana.tD[iAna][7][4])/4;
+									ana.xPlaT[iAna][1]=ana.tD[iAna][7][5];
+									ana.yPlaT[iAna][1]=ana.tD[iAna][6][4];
 								}
 
 								b=LOF/ana.tof[iAna]/0.299792458;
@@ -711,7 +802,6 @@ void Root2Ana()
 									}
 								}
 							}
-						}
 						
 						if(nGoodEvt>1&&ana.numTime[2][0]==4&&ana.numTime[2][1]==4&&(runNum==150||runNum==152||runNum==153||(nGoodMcp[1]==4&&nQdcTof[0]==4&&nQdcTof[1]==4))) //standard condition  //begin to fill branch of pid						
 						{
@@ -768,6 +858,7 @@ void StandaloneApplication(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
+	ROOT::EnableThreadSafety();
 	TApplication app("ROOT Application", &argc, argv);
 	StandaloneApplication(app.Argc(), app.Argv());
 	// app.Run();
